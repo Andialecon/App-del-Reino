@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getLocalUserId } from "@/lib/localUser";
+import { requireCurrentUserId } from "@/lib/auth";
 import type { CreateHymnInput, Hymn, UpdateHymnInput } from "../types";
 
 const TABLE = "hymns";
@@ -48,6 +48,7 @@ export async function getHymnSupabase(id: string): Promise<Hymn | null> {
 
 export async function createHymnSupabase(input: CreateHymnInput): Promise<Hymn> {
   const supabase = createClient();
+  const creatorId = await requireCurrentUserId();
   const { data, error } = await supabase
     .from(TABLE)
     .insert({
@@ -55,7 +56,7 @@ export async function createHymnSupabase(input: CreateHymnInput): Promise<Hymn> 
       lyrics: input.lyrics.trim(),
       original_key: input.originalKey.trim(),
       author: input.author?.trim() || null,
-      creator_id: getLocalUserId(),
+      creator_id: creatorId,
     })
     .select()
     .single();
@@ -69,7 +70,7 @@ export async function updateHymnSupabase(
   input: UpdateHymnInput
 ): Promise<Hymn> {
   const supabase = createClient();
-  const creatorId = getLocalUserId();
+  const creatorId = await requireCurrentUserId();
 
   const { data, error } = await supabase
     .from(TABLE)
@@ -92,7 +93,7 @@ export async function updateHymnSupabase(
 
 export async function deleteHymnSupabase(id: string): Promise<void> {
   const supabase = createClient();
-  const creatorId = getLocalUserId();
+  const creatorId = await requireCurrentUserId();
 
   const { data, error } = await supabase
     .from(TABLE)

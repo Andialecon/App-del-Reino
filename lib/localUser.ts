@@ -7,7 +7,7 @@ function createId(): string {
   return `user-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
-/** ID local del dispositivo hasta implementar autenticación. */
+/** ID local del dispositivo (respaldo sin Supabase y vinculación al primer login). */
 export function getLocalUserId(): string {
   if (typeof window === "undefined") return "";
   const existing = localStorage.getItem(USER_KEY);

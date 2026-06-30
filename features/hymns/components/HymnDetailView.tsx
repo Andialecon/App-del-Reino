@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { useHymn } from "@/hooks/useHymns";
 import { useHymnDisplaySettings } from "@/hooks/useHymnDisplaySettings";
-import { isHymnOwner } from "@/lib/localUser";
+import { useIsHymnOwner } from "@/hooks/useIsHymnOwner";
 import { HymnLyricsViewer } from "./HymnLyricsViewer";
 import { KeyTransposer } from "./KeyTransposer";
 import { HymnDisplaySettingsPanel } from "./HymnDisplaySettingsPanel";
@@ -22,6 +22,7 @@ export function HymnDetailView({ id }: HymnDetailViewProps) {
   const { hymn, loading, error } = useHymn(id);
   const { settings, updateSettings, resetSettings } = useHymnDisplaySettings();
   const [transposeSteps, setTransposeSteps] = useState(0);
+  const canEdit = useIsHymnOwner(hymn?.creatorId);
 
   const musicianMode = settings.musicianMode;
 
@@ -42,8 +43,6 @@ export function HymnDetailView({ id }: HymnDetailViewProps) {
       />
     );
   }
-
-  const canEdit = isHymnOwner(hymn.creatorId);
 
   return (
     <div className="space-y-4 animate-fade-in">

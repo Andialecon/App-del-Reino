@@ -2,6 +2,7 @@
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ServiceWorkerRegister } from "@/components/providers/ServiceWorkerRegister";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -11,8 +12,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <ServiceWorkerRegister />
-      {children}
+      <AuthProvider>
+        <ServiceWorkerRegister />
+        {children}
+      </AuthProvider>
     </ThemeProvider>
   );
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import { useHymn } from "@/hooks/useHymns";
-import { isHymnOwner } from "@/lib/localUser";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { useIsHymnOwner, useRequiresAuth } from "@/hooks/useIsHymnOwner";
 import { HymnForm } from "./HymnForm";
 import { HymnDeleteButton } from "./HymnDeleteButton";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SignInPrompt } from "@/components/auth/SignInPrompt";
 import { Music } from "lucide-react";
 import Link from "next/link";
 
@@ -15,8 +17,11 @@ interface EditHymnViewProps {
 
 export function EditHymnView({ id }: EditHymnViewProps) {
   const { hymn, loading, error } = useHymn(id);
+  const { loading: authLoading, isConfigured } = useAuth();
+  const canEdit = useIsHymnOwner(hymn?.creatorId);
+  const needsAuth = useRequiresAuth();
 
-  if (loading) {
+  if (loading || (isConfigured && authLoading)) {
     return <Loading label="Cargando..." className="py-16" />;
   }
 
@@ -30,7 +35,16 @@ export function EditHymnView({ id }: EditHymnViewProps) {
     );
   }
 
-  if (!isHymnOwner(hymn.creatorId)) {
+  if (needsAuth) {
+    return (
+      <SignInPrompt
+        title="Inicia sesión para editar"
+        description="Esta canción pertenece a una cuenta. Inicia sesión con Google para editarla desde cualquier navegador."
+      />
+    );
+  }
+
+  if (!canEdit) {
     return (
       <EmptyState
         icon={Music}
