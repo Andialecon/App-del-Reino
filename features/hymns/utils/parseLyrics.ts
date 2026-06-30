@@ -1,6 +1,22 @@
 import type { ChordCell, LyricLine } from "../types";
 import { isChordToken, normalizeChordToken, transposeChord } from "./chords";
 
+/** Contenido entre [] que no es acorde: Verso 2, Coro, Intro, etc. */
+export function isSectionMarker(content: string): boolean {
+  const label = content.trim();
+  if (!label) return false;
+  return !isChordToken(label);
+}
+
+function parseSectionOnlyLine(line: string): string | null {
+  const trimmed = line.trim();
+  const match = trimmed.match(/^\[([^\]]+)\]$/);
+  if (!match) return null;
+  const label = match[1].trim();
+  if (!isSectionMarker(label)) return null;
+  return label;
+}
+
 /**
  * Parsea letra en formato ChordPro: [C]Santo, [G]santo
  * También líneas solo con acordes separadas por espacios seguidas de letra.
@@ -12,6 +28,12 @@ export function parseLyricsToLines(raw: string): LyricLine[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const nextLine = lines[i + 1];
+
+    const sectionLabel = parseSectionOnlyLine(line);
+    if (sectionLabel) {
+      result.push({ kind: "section", label: sectionLabel });
+      continue;
+    }
 
     if (
       line.trim() &&
@@ -51,8 +73,13 @@ export function parseChordProLyrics(raw: string) {
           if (idx < arr.length - 1) segments.push({ type: "text", text: " " });
         });
       segments.push({ type: "text", text: `\n${line.lyricLine}` });
+    } else if (line.kind === "section") {
+      segments.push({ type: "text", text: line.label });
     } else {
       for (const cell of line.cells) {
+        if (cell.section) {
+          segments.push({ type: "text", text: cell.section });
+        }
         if (cell.chord) segments.push({ type: "chord", chord: cell.chord });
         if (cell.text) segments.push({ type: "text", text: cell.text });
       }
@@ -99,6 +126,8 @@ function parseChordProLineToCells(line: string): ChordCell[] {
       } else if (pendingChord !== null) {
         cells.push({ chord: pendingChord, text: content });
         pendingChord = null;
+      } else if (isSectionMarker(content)) {
+        cells.push({ chord: null, text: "", section: content.trim() });
       } else {
         cells.push({ chord: null, text: `[${content}]` });
       }
@@ -131,14 +160,24 @@ export function transposeAlignedChordLine(
 
 /** Letra sin acordes para modo normal */
 export function lyricsWithoutChords(raw: string): string {
-  return raw
-    .replace(/\[([^\]]+)\]/g, (_, chord: string) =>
-      isChordToken(chord) ? "" : chord
-    )
-    .replace(
-      /^[A-G][#b]?(?:m(?!aj)|maj|min|dim|aug|sus2|sus4|add\d+|M)?\d*(?:\/[A-G][#b]?)?\s+/gim,
-      ""
-    )
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const lines = parseLyricsToLines(raw);
+
+  const textLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.kind === "section") {
+      if (textLines.length > 0) textLines.push("");
+      textLines.push(line.label);
+      continue;
+    }
+    if (line.kind === "aligned") {
+      textLines.push(line.lyricLine);
+      continue;
+    }
+    textLines.push(
+      line.cells.map((cell) => cell.section ?? cell.text).join("")
+    );
+  }
+
+  return textLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }

@@ -9,6 +9,7 @@ import { isHymnOwner } from "@/lib/localUser";
 import { HymnLyricsViewer } from "./HymnLyricsViewer";
 import { KeyTransposer } from "./KeyTransposer";
 import { HymnDisplaySettingsPanel } from "./HymnDisplaySettingsPanel";
+import { HymnDeleteButton } from "./HymnDeleteButton";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Music } from "lucide-react";
@@ -55,13 +56,16 @@ export function HymnDetailView({ id }: HymnDetailViewProps) {
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {canEdit && (
-            <Link
-              href={`/hymns/${id}/edit`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-foreground hover:bg-accent transition-colors"
-              aria-label="Editar canción"
-            >
-              <Pencil size={20} />
-            </Link>
+            <>
+              <Link
+                href={`/hymns/${id}/edit`}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-foreground hover:bg-accent transition-colors"
+                aria-label="Editar canción"
+              >
+                <Pencil size={20} />
+              </Link>
+              <HymnDeleteButton hymnId={id} hymnTitle={hymn.title} />
+            </>
           )}
           <HymnDisplaySettingsPanel
             settings={settings}

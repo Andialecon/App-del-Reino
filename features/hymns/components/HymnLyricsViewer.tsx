@@ -34,23 +34,19 @@ function getLineLayoutStyle(
   display: HymnDisplaySettings,
   lineGap: number
 ): CSSProperties {
-  if (display.textAlign === "justify") {
-    return {
-      width: "100%",
-      marginBottom: lineGap,
-      display: "flex",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-      alignItems: "flex-end",
-      gap: "0 0.25rem",
-    };
-  }
+  // En ChordPro, justify/space-between rompe la posición acorde-sílaba.
+  const textAlign =
+    display.textAlign === "justify" ? "left" : display.textAlign;
 
   return {
     width: "100%",
     marginBottom: lineGap,
-    textAlign: display.textAlign,
+    textAlign,
   };
+}
+
+function getChordRowHeight(chordSize: number): number {
+  return Math.ceil(chordSize * 1.15) + 2;
 }
 
 function transposeCellChord(chord: string | null, steps: number): string | null {
@@ -61,36 +57,84 @@ function transposeCellChord(chord: string | null, steps: number): string | null 
 function ChordAboveText({
   chord,
   text,
+  section,
   textStyle,
   chordSize,
-  lineHeight,
+  chordRowHeight,
+  reserveChordSpace,
 }: {
   chord: string | null;
   text: string;
+  section?: string;
   textStyle: CSSProperties;
   chordSize: number;
-  lineHeight: number;
+  chordRowHeight: number;
+  reserveChordSpace: boolean;
 }) {
-  const chordRowHeight = Math.max(chordSize, Math.round(chordSize * lineHeight * 0.55));
+  if (section) {
+    return (
+      <span
+        className="block w-full text-sm font-semibold text-muted-foreground tracking-wide"
+        style={textStyle}
+      >
+        {section}
+      </span>
+    );
+  }
 
   return (
-    <span className="inline-block align-bottom max-w-full">
-      <span
-        className={cn(
-          "block font-mono font-extrabold leading-none select-none",
-          chord ? "text-primary" : "text-transparent"
-        )}
-        style={{
-          fontSize: chordSize,
-          height: chord ? chordRowHeight : chordRowHeight * 0.5,
-          lineHeight: 1,
-        }}
-        aria-hidden={!chord}
-      >
-        {chord ?? "·"}
+    <span
+      className="inline-flex flex-col-reverse items-start"
+      style={{ verticalAlign: "bottom" }}
+    >
+      <span className="whitespace-pre" style={textStyle}>
+        {text || (chord ? "\u00a0" : "")}
       </span>
-      <span className="block whitespace-pre-wrap" style={textStyle}>{text}</span>
+      {reserveChordSpace && (
+        <span
+          className="relative self-stretch overflow-visible"
+          style={{ height: chordRowHeight, marginBottom: 3, lineHeight: 1 }}
+          aria-hidden={!chord}
+        >
+          {chord && (
+            <span
+              className="absolute bottom-0 left-0 font-mono font-extrabold leading-none text-primary whitespace-nowrap select-none"
+              style={{ fontSize: chordSize }}
+            >
+              {chord}
+            </span>
+          )}
+        </span>
+      )}
     </span>
+  );
+}
+
+function SectionLine({
+  label,
+  display,
+  lineGap,
+  textStyle,
+  isFirst,
+}: {
+  label: string;
+  display: HymnDisplaySettings;
+  lineGap: number;
+  textStyle: CSSProperties;
+  isFirst: boolean;
+}) {
+  return (
+    <p
+      className="w-full text-sm font-semibold text-muted-foreground tracking-wide"
+      style={{
+        ...textStyle,
+        textAlign: display.textAlign,
+        marginTop: isFirst ? 0 : Math.max(lineGap, 8),
+        marginBottom: lineGap,
+      }}
+    >
+      {label}
+    </p>
   );
 }
 
@@ -110,17 +154,21 @@ function ChordProLine({
   chordSize: number;
 }) {
   const lineStyle = getLineLayoutStyle(display, lineGap);
+  const chordRowHeight = getChordRowHeight(chordSize);
+  const reserveChordSpace = cells.some((cell) => cell.chord);
 
   return (
-    <div style={lineStyle}>
+    <div style={{ ...lineStyle, lineHeight: 1 }}>
       {cells.map((cell, i) => (
         <ChordAboveText
           key={i}
           chord={transposeCellChord(cell.chord, transposeSteps)}
           text={cell.text}
+          section={cell.section}
           textStyle={textStyle}
           chordSize={chordSize}
-          lineHeight={display.lineHeight}
+          chordRowHeight={chordRowHeight}
+          reserveChordSpace={reserveChordSpace}
         />
       ))}
     </div>
@@ -145,7 +193,8 @@ function AlignedLine({
   chordSize: number;
 }) {
   const transposedChords = transposeAlignedChordLine(chordLine, transposeSteps);
-  const align = display.textAlign;
+  const align =
+    display.textAlign === "justify" ? "left" : display.textAlign;
 
   return (
     <div
@@ -153,20 +202,22 @@ function AlignedLine({
       style={{ width: "100%", marginBottom: lineGap }}
     >
       <pre
-        className="font-mono font-extrabold text-primary whitespace-pre"
+        className="font-mono font-extrabold text-primary whitespace-pre leading-none"
         style={{
-          fontSize: chordSize,
-          lineHeight: 1.1,
+          fontSize: display.fontSize,
+          lineHeight: 1,
           textAlign: align,
+          marginBottom: 2,
         }}
         aria-hidden
       >
         {transposedChords}
       </pre>
       <pre
-        className="whitespace-pre-wrap text-foreground"
+        className="font-mono whitespace-pre text-foreground"
         style={{
-          ...textStyle,
+          fontSize: display.fontSize,
+          lineHeight: display.lineHeight,
           textAlign: align,
           width: "100%",
         }}
@@ -193,7 +244,16 @@ function MusicianLyrics({
   return (
     <div>
       {lines.map((line, i) =>
-        line.kind === "aligned" ? (
+        line.kind === "section" ? (
+          <SectionLine
+            key={i}
+            label={line.label}
+            display={display}
+            lineGap={lineGap}
+            textStyle={textStyle}
+            isFirst={i === 0}
+          />
+        ) : line.kind === "aligned" ? (
           <AlignedLine
             key={i}
             chordLine={line.chordLine}

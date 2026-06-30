@@ -89,3 +89,19 @@ export async function updateHymnSupabase(
   if (!data) throw new Error("Solo el creador puede editar esta canción.");
   return rowToHymn(data);
 }
+
+export async function deleteHymnSupabase(id: string): Promise<void> {
+  const supabase = createClient();
+  const creatorId = getLocalUserId();
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .delete()
+    .eq("id", id)
+    .eq("creator_id", creatorId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("Solo el creador puede eliminar esta canción.");
+}

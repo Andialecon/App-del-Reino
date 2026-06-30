@@ -194,10 +194,19 @@ export function updateHymnLocal(id: string, input: UpdateHymnInput): Hymn {
   return updated;
 }
 
-export function deleteHymnLocal(id: string): boolean {
+export function deleteHymnLocal(id: string): void {
   const hymns = readAll();
-  const filtered = hymns.filter((h) => h.id !== id);
-  if (filtered.length === hymns.length) return false;
-  writeAll(filtered);
-  return true;
+  const index = hymns.findIndex((h) => h.id === id);
+  if (index === -1) {
+    throw new Error("Canción no encontrada.");
+  }
+
+  const existing = hymns[index];
+  const userId = getLocalUserId();
+  if (!existing.creatorId || existing.creatorId !== userId) {
+    throw new Error("Solo el creador puede eliminar esta canción.");
+  }
+
+  hymns.splice(index, 1);
+  writeAll(hymns);
 }

@@ -3,6 +3,7 @@
 import { useHymn } from "@/hooks/useHymns";
 import { isHymnOwner } from "@/lib/localUser";
 import { HymnForm } from "./HymnForm";
+import { HymnDeleteButton } from "./HymnDeleteButton";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Music } from "lucide-react";
@@ -61,6 +62,12 @@ export function EditHymnView({ id }: EditHymnViewProps) {
           originalKey: hymn.originalKey,
           author: hymn.author,
         }}
+      />
+      <HymnDeleteButton
+        hymnId={id}
+        hymnTitle={hymn.title}
+        variant="button"
+        className="mt-2"
       />
     </div>
   );

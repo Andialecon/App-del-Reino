@@ -1,12 +1,14 @@
 import type { CreateHymnInput, Hymn, UpdateHymnInput } from "../types";
 import {
   createHymnLocal,
+  deleteHymnLocal,
   getHymnLocal,
   getHymnsLocal,
   updateHymnLocal,
 } from "./local";
 import {
   createHymnSupabase,
+  deleteHymnSupabase,
   getHymnSupabase,
   getHymnsSupabase,
   isSupabaseConfigured,
@@ -63,4 +65,18 @@ export async function updateHymn(
     }
   }
   return updateHymnLocal(id, input);
+}
+
+export async function deleteHymn(id: string): Promise<void> {
+  if (isSupabaseConfigured()) {
+    try {
+      await deleteHymnSupabase(id);
+      return;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Error al eliminar en Supabase";
+      throw new Error(message);
+    }
+  }
+  deleteHymnLocal(id);
 }

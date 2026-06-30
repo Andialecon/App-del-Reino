@@ -120,13 +120,13 @@ export function HymnForm({ mode, hymnId, initial }: HymnFormProps) {
       <Field
         label="Letra con acordes"
         required
-        hint="Coloca acordes entre corchetes antes de cada frase."
+        hint="Acordes entre corchetes: [C]texto. Secciones en su propia línea: [Verso 2], [Coro]."
       >
         <textarea
           value={lyrics}
           onChange={(e) => setLyrics(e.target.value)}
           rows={14}
-          placeholder={`[C]Santo, [G]santo, [Am]santo\n[C]Dios [F]poderoso [C]y [G]magnífico`}
+          placeholder={`[Verso 1]\n[C]Santo, [G]santo, [Am]santo\n\n[Coro]\n[C]Dios [F]poderoso`}
           className={cn(inputClass, "resize-y min-h-[12rem] font-mono text-sm")}
         />
       </Field>

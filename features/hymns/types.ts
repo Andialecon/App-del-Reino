@@ -49,9 +49,12 @@ export type LyricSegment =
 export interface ChordCell {
   chord: string | null;
   text: string;
+  /** Etiqueta de sección ChordPro, ej. Verso 2, Coro */
+  section?: string;
 }
 
-/** Línea con celdas ChordPro o líneas alineadas (acordes arriba + letra abajo). */
+/** Línea con celdas ChordPro, acordes alineados o encabezado de sección. */
 export type LyricLine =
   | { kind: "chordpro"; cells: ChordCell[] }
-  | { kind: "aligned"; chordLine: string; lyricLine: string };
+  | { kind: "aligned"; chordLine: string; lyricLine: string }
+  | { kind: "section"; label: string };
