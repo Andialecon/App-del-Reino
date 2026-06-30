@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: 250 250 252;
+  --foreground: 15 23 42;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --primary: 79 70 229;
+  --primary-foreground: 255 255 255;
+  --secondary: 241 245 249;
+  --secondary-foreground: 30 41 59;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --accent: 238 242 255;
+  --accent-foreground: 79 70 229;
+  --border: 226 232 240;
+  --ring: 79 70 229;
+  --surface-elevated: 255 255 255;
+  --nav-background: 255 255 255;
+  --splash-gradient-start: 79 70 229;
+  --splash-gradient-end: 99 102 241;
+}
+
+.dark {
+  --background: 15 17 23;
+  --foreground: 248 250 252;
+  --card: 24 27 35;
+  --card-foreground: 248 250 252;
+  --primary: 129 140 248;
+  --primary-foreground: 15 17 23;
+  --secondary: 30 34 44;
+  --secondary-foreground: 226 232 240;
+  --muted: 30 34 44;
+  --muted-foreground: 148 163 184;
+  --accent: 39 44 58;
+  --accent-foreground: 199 210 254;
+  --border: 39 44 58;
+  --ring: 129 140 248;
+  --surface-elevated: 30 34 44;
+  --nav-background: 20 23 30;
+  --splash-gradient-start: 55 48 163;
+  --splash-gradient-end: 79 70 229;
+}
+
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-border: rgb(var(--border));
+  --color-ring: rgb(var(--ring));
+  --color-surface-elevated: rgb(var(--surface-elevated));
+  --color-nav-background: rgb(var(--nav-background));
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

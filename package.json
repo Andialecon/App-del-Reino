@@ -1,0 +1,37 @@
+{
+  "name": "iglesia-trinidad",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "clean": "node scripts/clean-legacy-next.mjs",
+    "dev": "next dev",
+    "dev:clean": "node scripts/clean-legacy-next.mjs && next dev",
+    "prebuild": "node scripts/clean-legacy-next.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@serwist/next": "^9.0.12",
+    "@supabase/supabase-js": "^2.49.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.475.0",
+    "next": "^15.2.0",
+    "next-themes": "^0.4.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "serwist": "^9.0.12",
+    "tailwind-merge": "^3.0.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.0.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.2.0",
+    "tailwindcss": "^4.0.6",
+    "typescript": "^5"
+  }
+}
