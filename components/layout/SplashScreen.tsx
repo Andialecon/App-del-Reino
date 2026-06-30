@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AppIcon } from "@/components/ui/AppIcon";
 import { Logo } from "@/components/ui/Logo";
 import { APP_NAME } from "@/lib/constants";
 
@@ -24,13 +25,12 @@ export function SplashScreen() {
       }}
     >
       <div className="animate-scale-in flex flex-col items-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/20 text-3xl font-bold text-white shadow-lg backdrop-blur-sm">
-          R
-        </div>
+        <AppIcon size="xl" priority className="mb-6" />
         <Logo
           size="lg"
+          showIcon={false}
           showText
-          className="text-white [&_div:first-child]:bg-white/20 [&_div:first-child]:text-white [&_span]:text-white"
+          className="text-white [&_span]:text-white"
         />
         <p className="mt-3 text-sm text-white/80 animate-pulse-soft">
           {APP_NAME}

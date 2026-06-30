@@ -5,6 +5,7 @@ import { useDrawer } from "@/hooks/useDrawer";
 import { Header } from "@/components/layout/Header";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { Drawer } from "@/components/layout/Drawer";
+import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { ALL_MODULES, getModuleByHref } from "@/lib/modules";
 
 const MODULE_ROOTS = new Set(ALL_MODULES.map((m) => m.href));
@@ -39,6 +40,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       <Drawer isOpen={isOpen} onClose={close} />
       {children}
       <BottomNavigation />
+      <InstallAppPrompt />
     </div>
   );
 }
