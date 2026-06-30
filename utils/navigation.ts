@@ -1,4 +1,4 @@
-import { Home, Users, CalendarDays, User } from "lucide-react";
+import { Home, Users, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface BottomNavItem {
@@ -11,7 +11,6 @@ export interface BottomNavItem {
 export const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   { id: "home", name: "Inicio", href: "/home", icon: Home },
   { id: "community", name: "Comunidad", href: "/community", icon: Users },
-  { id: "events", name: "Eventos", href: "/events", icon: CalendarDays },
   { id: "profile", name: "Perfil", href: "/profile", icon: User },
 ];
 

@@ -7,6 +7,6 @@ export const profileConfig: ModuleConfig = {
   description: "Tu información y preferencias personales.",
   href: "/profile",
   icon: User,
-  showInHome: true,
+  showInHome: false,
   showInDrawer: true,
 };

@@ -7,6 +7,6 @@ export const eventsConfig: ModuleConfig = {
   description: "Calendario de actividades y reuniones.",
   href: "/events",
   icon: CalendarDays,
-  showInHome: true,
-  showInDrawer: true,
+  showInHome: false,
+  showInDrawer: false,
 };

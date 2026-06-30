@@ -2,6 +2,7 @@ import type { ModuleConfig } from "@/features/types";
 import { bibleConfig } from "@/features/bible/config";
 import { hymnsConfig } from "@/features/hymns/config";
 import { confessionConfig } from "@/features/confession/config";
+import { discipleshipConfig } from "@/features/discipleship/config";
 import { gamesConfig } from "@/features/games/config";
 import { communityConfig } from "@/features/community/config";
 import { eventsConfig } from "@/features/events/config";
@@ -12,6 +13,7 @@ export const ALL_MODULES: ModuleConfig[] = [
   bibleConfig,
   hymnsConfig,
   confessionConfig,
+  discipleshipConfig,
   gamesConfig,
   communityConfig,
   eventsConfig,

@@ -1,12 +1,12 @@
-import { ScrollText } from "lucide-react";
+import { Home } from "lucide-react";
 import type { ModuleConfig } from "../types";
 
 export const confessionConfig: ModuleConfig = {
   id: "confession",
-  name: "Confesión de Fe",
-  description: "Los fundamentos doctrinales de nuestra iglesia.",
+  name: "Casas de Fe",
+  description: "Grupos pequeños para crecer juntos en la fe.",
   href: "/confession",
-  icon: ScrollText,
+  icon: Home,
   showInHome: true,
   showInDrawer: true,
 };

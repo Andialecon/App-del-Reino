@@ -2,6 +2,7 @@ export type ModuleId =
   | "bible"
   | "hymns"
   | "confession"
+  | "discipleship"
   | "games"
   | "community"
   | "events"

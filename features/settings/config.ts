@@ -7,6 +7,6 @@ export const settingsConfig: ModuleConfig = {
   description: "Personaliza tu experiencia en la aplicación.",
   href: "/settings",
   icon: Settings,
-  showInHome: true,
-  showInDrawer: true,
+  showInHome: false,
+  showInDrawer: false,
 };
