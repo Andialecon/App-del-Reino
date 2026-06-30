@@ -7,6 +7,7 @@ import { usePlaylists } from "@/hooks/usePlaylists";
 import { Card } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SharePlaylistButton } from "./SharePlaylistButton";
 
 export function PlaylistList() {
   const { playlists, loading, error } = usePlaylists();
@@ -75,8 +76,11 @@ export function PlaylistList() {
         <ul className="space-y-2">
           {filtered.map((playlist) => (
             <li key={playlist.id}>
-              <Link href={`/hymns/playlists/${playlist.id}`}>
-                <Card interactive className="flex items-center gap-3">
+              <Card className="flex items-center gap-2 p-3">
+                <Link
+                  href={`/hymns/playlists/${playlist.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl transition-colors hover:opacity-90"
+                >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                     <ListMusic size={20} />
                   </div>
@@ -90,8 +94,12 @@ export function PlaylistList() {
                         : ""}
                     </p>
                   </div>
-                </Card>
-              </Link>
+                </Link>
+                <SharePlaylistButton
+                  playlistId={playlist.id}
+                  playlistTitle={playlist.title}
+                />
+              </Card>
             </li>
           ))}
         </ul>

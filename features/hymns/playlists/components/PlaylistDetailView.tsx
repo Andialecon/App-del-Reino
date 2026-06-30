@@ -19,6 +19,7 @@ import { KeyTransposer } from "@/features/hymns/components/KeyTransposer";
 import { HymnDisplaySettingsPanel } from "@/features/hymns/components/HymnDisplaySettingsPanel";
 import { PlaylistDeleteButton } from "./PlaylistDeleteButton";
 import { RemovePlaylistItemButton } from "./RemovePlaylistItemButton";
+import { SharePlaylistButton } from "./SharePlaylistButton";
 import {
   removePlaylistItem,
   reorderPlaylistItems,
@@ -159,6 +160,10 @@ export function PlaylistDetailView({ id }: PlaylistDetailViewProps) {
           </p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <SharePlaylistButton
+            playlistId={id}
+            playlistTitle={playlist.title}
+          />
           {canEdit && (
             <>
               <Link
