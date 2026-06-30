@@ -10,6 +10,7 @@ import { HymnLyricsViewer } from "./HymnLyricsViewer";
 import { KeyTransposer } from "./KeyTransposer";
 import { HymnDisplaySettingsPanel } from "./HymnDisplaySettingsPanel";
 import { HymnDeleteButton } from "./HymnDeleteButton";
+import { AddToPlaylistButton } from "@/features/hymns/playlists/components/AddToPlaylistButton";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Music } from "lucide-react";
@@ -54,6 +55,12 @@ export function HymnDetailView({ id }: HymnDetailViewProps) {
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <AddToPlaylistButton
+            hymnId={id}
+            hymnTitle={hymn.title}
+            originalKey={hymn.originalKey}
+            transposeSteps={transposeSteps}
+          />
           {canEdit && (
             <>
               <Link
