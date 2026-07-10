@@ -1,19 +1,22 @@
 "use client";
 
-import type { ModuleConfig } from "@/features/types";
+import type { ModuleId } from "@/types";
+import { getModuleById } from "@/lib/modules";
 import { Clock } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useTranslation } from "@/components/providers/LocaleProvider";
 import { useModuleLabels } from "@/hooks/useModuleLabels";
 
 interface ModulePlaceholderProps {
-  module: ModuleConfig;
+  moduleId: ModuleId;
 }
 
-export function ModulePlaceholder({ module }: ModulePlaceholderProps) {
+export function ModulePlaceholder({ moduleId }: ModulePlaceholderProps) {
   const { t } = useTranslation();
-  const { name, description } = useModuleLabels(module);
-  const Icon = module.icon;
+  const moduleConfig =
+    getModuleById(moduleId) ?? getModuleById("bible")!;
+  const { name, description } = useModuleLabels(moduleConfig);
+  const Icon = moduleConfig.icon;
 
   return (
     <div className="animate-fade-in-up">

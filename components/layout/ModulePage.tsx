@@ -11,7 +11,7 @@ export function createModulePage(module: ModuleConfig) {
   const Page = () => (
     <PageContainer>
       <div className="py-4">
-        <ModulePlaceholder module={module} />
+        <ModulePlaceholder moduleId={module.id} />
       </div>
     </PageContainer>
   );
@@ -29,7 +29,7 @@ export function ModulePage({ module }: ModulePageProps) {
   return (
     <PageContainer>
       <div className="py-4">
-        <ModulePlaceholder module={module} />
+        <ModulePlaceholder moduleId={module.id} />
       </div>
     </PageContainer>
   );
