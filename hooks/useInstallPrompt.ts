@@ -1,37 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  canShowInstallPrompt,
-  dismissInstallPrompt,
-  isIOS,
-  type BeforeInstallPromptEvent,
-} from "@/utils/pwa";
+import { canShowInstallPrompt, dismissInstallPrompt } from "@/utils/pwa";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 export function useInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const { canInstall, isIOS, installing, install } = usePWAInstall();
   const [visible, setVisible] = useState(false);
-  const [installing, setInstalling] = useState(false);
-  const [iosDevice, setIosDevice] = useState(false);
 
   useEffect(() => {
     if (!canShowInstallPrompt()) return;
-
-    setIosDevice(isIOS());
-
-    const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
 
     const timer = window.setTimeout(() => setVisible(true), 900);
 
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     };
   }, []);
 
@@ -40,29 +23,20 @@ export function useInstallPrompt() {
     setVisible(false);
   }, []);
 
-  const install = useCallback(async () => {
-    if (!deferredPrompt) return;
-
-    setInstalling(true);
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+  const handleInstall = useCallback(async () => {
+    const accepted = await install();
+    if (accepted) {
       dismissInstallPrompt();
       setVisible(false);
-      if (outcome === "accepted") {
-        setDeferredPrompt(null);
-      }
-    } finally {
-      setInstalling(false);
     }
-  }, [deferredPrompt]);
+  }, [install]);
 
   return {
     visible,
-    canInstall: deferredPrompt !== null,
-    isIOS: iosDevice,
+    canInstall,
+    isIOS,
     installing,
-    install,
+    install: handleInstall,
     dismiss,
   };
 }

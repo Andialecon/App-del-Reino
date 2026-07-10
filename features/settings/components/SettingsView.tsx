@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { useTranslation } from "@/components/providers/LocaleProvider";
+import { InstallAppSection } from "@/features/settings/components/InstallAppSection";
 import { cn } from "@/utils/cn";
 
 export function SettingsView() {
@@ -28,6 +29,8 @@ export function SettingsView() {
         <h1 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("settings.subtitle")}</p>
       </div>
+
+      <InstallAppSection />
 
       <section className="space-y-3">
         <div>

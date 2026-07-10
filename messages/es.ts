@@ -85,6 +85,25 @@ export const es = {
     languageSection: "Idioma de la interfaz",
     languageHint:
       "Ideal para aprender inglés o español con vocabulario y historias bíblicas que ya conoces.",
+    install: {
+      sectionTitle: "Instalar aplicación",
+      badge: "Instala en tu móvil",
+      title: "Lleva {appName} contigo",
+      description:
+        "Acceso rápido desde tu pantalla de inicio, en pantalla completa y sin barra del navegador.",
+      benefitFast: "Acceso rápido",
+      benefitOffline: "Funciona sin conexión",
+      installNow: "Instalar ahora",
+      installing: "Instalando...",
+      alreadyInstalled: "App instalada",
+      alreadyInstalledHint: "Ya tienes la app en tu pantalla de inicio.",
+      iosHint: "En Safari, toca el botón Compartir y luego:",
+      iosStepShare: "Compartir",
+      iosStepAdd: "Agregar a pantalla de inicio",
+      androidHint: "Para instalar la app en Android:",
+      androidStep1: "Abre el menú del navegador (⋮)",
+      androidStep2: 'Elige "Instalar aplicación" o "Agregar a inicio"',
+    },
   },
   bible: {
     title: "Biblia",
@@ -120,19 +139,19 @@ export const es = {
     versions: {
       rv1960: {
         shortName: "RV60",
-        name: "Reina Valera 1960",
+        name: "Reina Valera",
       },
       nvi: {
         shortName: "NVI",
-        name: "Nueva Versión Internacional",
+        name: "Versión Internacional",
       },
       kjv: {
         shortName: "KJV",
-        name: "King James Version",
+        name: "King James",
       },
       niv: {
         shortName: "NIV",
-        name: "New International Version",
+        name: "New International",
       },
     },
     books: {

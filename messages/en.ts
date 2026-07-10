@@ -87,6 +87,25 @@ export const en: Messages = {
     languageSection: "Interface language",
     languageHint:
       "Great for learning English or Spanish with biblical vocabulary and stories you already know.",
+    install: {
+      sectionTitle: "Install app",
+      badge: "Install on your phone",
+      title: "Take {appName} with you",
+      description:
+        "Quick access from your home screen, full screen, and without the browser bar.",
+      benefitFast: "Quick access",
+      benefitOffline: "Works offline",
+      installNow: "Install now",
+      installing: "Installing...",
+      alreadyInstalled: "App installed",
+      alreadyInstalledHint: "You already have the app on your home screen.",
+      iosHint: "In Safari, tap Share and then:",
+      iosStepShare: "Share",
+      iosStepAdd: "Add to Home Screen",
+      androidHint: "To install the app on Android:",
+      androidStep1: "Open the browser menu (⋮)",
+      androidStep2: 'Choose "Install app" or "Add to Home screen"',
+    },
   },
   bible: {
     title: "Bible",
@@ -122,19 +141,19 @@ export const en: Messages = {
     versions: {
       rv1960: {
         shortName: "RV60",
-        name: "Reina-Valera 1960 (Spanish)",
+        name: "Reina Valera",
       },
       nvi: {
         shortName: "NVI",
-        name: "Nueva Versión Internacional (Spanish)",
+        name: "Versión Internacional",
       },
       kjv: {
         shortName: "KJV",
-        name: "King James Version",
+        name: "King James",
       },
       niv: {
         shortName: "NIV",
-        name: "New International Version",
+        name: "New International",
       },
     },
     books: {

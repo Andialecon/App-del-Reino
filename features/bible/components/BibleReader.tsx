@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 import { fetchChapter } from "@/features/bible/api";
 import { SelectableTranslation } from "@/features/bible/components/SelectableTranslation";
+import { VersionSwitcher } from "@/features/bible/components/VersionSwitcher";
 import { getBookById, getBooksByTestament } from "@/features/bible/data/books";
 import {
-  BIBLE_VERSION_DEFINITIONS,
   getBibleVersionDef,
   type BibleBook,
   type BibleChapter,
@@ -25,53 +25,6 @@ import { useBibleVersion } from "@/hooks/useBibleVersion";
 import { cn } from "@/utils/cn";
 
 type Step = "testament" | "book" | "chapter" | "verse" | "read";
-
-function VersionSwitcher({
-  value,
-  onChange,
-}: {
-  value: BibleVersionCode;
-  onChange: (version: BibleVersionCode) => void;
-}) {
-  const { t, versionMeta } = useBibleLabels();
-
-  const spanishVersions = BIBLE_VERSION_DEFINITIONS.filter(
-    (def) => def.language === "es"
-  );
-  const englishVersions = BIBLE_VERSION_DEFINITIONS.filter(
-    (def) => def.language === "en"
-  );
-
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as BibleVersionCode)}
-      className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label={t("bible.versionLabel")}
-    >
-      <optgroup label={t("language.es")}>
-        {spanishVersions.map((def) => {
-          const meta = versionMeta(def.code);
-          return (
-            <option key={def.code} value={def.code}>
-              {meta.shortName} — {meta.name}
-            </option>
-          );
-        })}
-      </optgroup>
-      <optgroup label={t("language.en")}>
-        {englishVersions.map((def) => {
-          const meta = versionMeta(def.code);
-          return (
-            <option key={def.code} value={def.code}>
-              {meta.shortName} — {meta.name}
-            </option>
-          );
-        })}
-      </optgroup>
-    </select>
-  );
-}
 
 function StepHeader({
   title,
@@ -499,9 +452,6 @@ function ReadStep({
       )}
 
       <article className="rounded-2xl border border-border bg-gradient-to-b from-amber-50/40 via-card to-card p-5 shadow-sm dark:from-amber-950/20">
-        <p className="mb-3 text-xs text-muted-foreground">
-          {t("bible.selectToTranslate")}
-        </p>
         <SelectableTranslation
           sourceLang={versionDef.language}
           targetLang={targetLang}
