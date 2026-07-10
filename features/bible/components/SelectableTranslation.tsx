@@ -234,28 +234,22 @@ export function SelectableTranslation({
               </button>
             </div>
 
-            <p className="line-clamp-2 text-xs text-muted-foreground">
-              {selection.text}
-            </p>
+            {loading && (
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <Loader2 size={14} className="animate-spin text-amber-600" />
+                <span>{t("bible.translating")}</span>
+              </div>
+            )}
 
-            <div className="mt-2 border-t border-border/60 pt-2">
-              {loading && (
-                <div className="flex items-center gap-2 text-sm text-foreground">
-                  <Loader2 size={14} className="animate-spin text-amber-600" />
-                  <span>{t("bible.translating")}</span>
-                </div>
-              )}
+            {!loading && error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
 
-              {!loading && error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-
-              {!loading && !error && translation && (
-                <p className="text-sm font-medium leading-snug text-foreground">
-                  {translation}
-                </p>
-              )}
-            </div>
+            {!loading && !error && translation && (
+              <p className="text-sm font-medium leading-snug text-foreground">
+                {translation}
+              </p>
+            )}
           </div>
         </div>
       )}
