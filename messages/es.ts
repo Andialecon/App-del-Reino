@@ -136,6 +136,21 @@ export const es = {
     translating: "Traduciendo...",
     translateError: "No se pudo traducir",
     translateTo: "→ {language}",
+    fullscreen: {
+      enter: "Pantalla completa",
+      exit: "Salir de pantalla completa",
+    },
+    display: {
+      title: "Visualización",
+      settingsLabel: "Configuración de visualización",
+      close: "Cerrar",
+      fontSize: "Tamaño de fuente",
+      lineHeight: "Interlineado",
+      fontFamily: "Fuente",
+      fontSans: "Sans",
+      fontSerif: "Serif",
+      reset: "Restaurar valores",
+    },
     versions: {
       rv1960: {
         shortName: "RV60",

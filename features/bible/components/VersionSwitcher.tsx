@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import {
   BIBLE_VERSION_DEFINITIONS,
   type BibleVersionCode,
 } from "@/features/bible/types";
 import { useBibleLabels } from "@/hooks/useBibleLabels";
+import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { cn } from "@/utils/cn";
 
 interface VersionSwitcherProps {
@@ -72,29 +73,8 @@ export function VersionSwitcher({ value, onChange }: VersionSwitcherProps) {
     (def) => def.language === "en"
   );
 
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-
-    const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown);
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismissOnOutside(rootRef, open, close);
 
   const handleSelect = (code: BibleVersionCode) => {
     onChange(code);

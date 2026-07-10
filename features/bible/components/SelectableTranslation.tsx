@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -16,7 +17,11 @@ import { cn } from "@/utils/cn";
 const MIN_SELECTION_LENGTH = 1;
 const MAX_SELECTION_LENGTH = 500;
 const POPUP_MARGIN = 8;
+const SELECTION_GAP = 12;
 const POPUP_ESTIMATED_HEIGHT = 120;
+const POPUP_ESTIMATED_WIDTH = 280;
+const SELECTION_DEBOUNCE_MS = 120;
+const MOBILE_SELECTION_RETRIES_MS = [0, 50, 150, 350] as const;
 
 interface PopupPosition {
   top: number;
@@ -27,6 +32,7 @@ interface PopupPosition {
 interface SelectionState {
   text: string;
   position: PopupPosition;
+  rect: DOMRect;
 }
 
 interface SelectableTranslationProps {
@@ -36,28 +42,81 @@ interface SelectableTranslationProps {
   className?: string;
 }
 
-function clampPopupPosition(rect: DOMRect): PopupPosition {
+function hasOverlapWithSelection(
+  top: number,
+  popupHeight: number,
+  rect: DOMRect
+): boolean {
+  const popupBottom = top + popupHeight;
+  return popupBottom > rect.top - SELECTION_GAP && top < rect.bottom + SELECTION_GAP;
+}
+
+function computePopupPosition(
+  rect: DOMRect,
+  popupHeight: number,
+  popupWidth: number
+): PopupPosition {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  const popupWidth = Math.min(280, viewportWidth - POPUP_MARGIN * 2);
+  const width = Math.min(popupWidth, viewportWidth - POPUP_MARGIN * 2);
 
-  let left = rect.left + rect.width / 2 - popupWidth / 2;
+  let left = rect.left + rect.width / 2 - width / 2;
   left = Math.max(
     POPUP_MARGIN,
-    Math.min(left, viewportWidth - popupWidth - POPUP_MARGIN)
+    Math.min(left, viewportWidth - width - POPUP_MARGIN)
   );
 
-  const spaceAbove = rect.top;
-  const spaceBelow = viewportHeight - rect.bottom;
-  const showAbove =
-    spaceAbove >= POPUP_ESTIMATED_HEIGHT + POPUP_MARGIN ||
-    spaceAbove >= spaceBelow;
+  const spaceAbove = rect.top - POPUP_MARGIN;
+  const spaceBelow = viewportHeight - rect.bottom - POPUP_MARGIN;
+  const fitsAbove = spaceAbove >= popupHeight + SELECTION_GAP;
+  const fitsBelow = spaceBelow >= popupHeight + SELECTION_GAP;
 
-  const top = showAbove
-    ? Math.max(POPUP_MARGIN, rect.top - POPUP_MARGIN)
-    : Math.min(viewportHeight - POPUP_MARGIN, rect.bottom + POPUP_MARGIN);
+  const aboveTop = Math.max(
+    POPUP_MARGIN,
+    rect.top - SELECTION_GAP - popupHeight
+  );
+  const belowTop = Math.min(
+    viewportHeight - popupHeight - POPUP_MARGIN,
+    rect.bottom + SELECTION_GAP
+  );
 
-  return { top, left, placement: showAbove ? "above" : "below" };
+  let placement: "above" | "below";
+  let top: number;
+
+  if (fitsAbove && (!fitsBelow || spaceAbove >= spaceBelow)) {
+    placement = "above";
+    top = aboveTop;
+  } else if (fitsBelow) {
+    placement = "below";
+    top = belowTop;
+  } else if (spaceAbove >= spaceBelow) {
+    placement = "above";
+    top = aboveTop;
+  } else {
+    placement = "below";
+    top = belowTop;
+  }
+
+  if (hasOverlapWithSelection(top, popupHeight, rect)) {
+    const alternateTop = placement === "above" ? belowTop : aboveTop;
+    if (!hasOverlapWithSelection(alternateTop, popupHeight, rect)) {
+      placement = placement === "above" ? "below" : "above";
+      top = alternateTop;
+    }
+  }
+
+  return { top, left, placement };
+}
+
+function supportsCssHighlightApi(): boolean {
+  return typeof CSS !== "undefined" && "highlights" in CSS;
+}
+
+function applySelectionHighlight(range: Range | null) {
+  if (!supportsCssHighlightApi()) return;
+  CSS.highlights.delete("bible-selection");
+  if (!range) return;
+  CSS.highlights.set("bible-selection", new Highlight(range));
 }
 
 function isSelectionInside(
@@ -80,87 +139,231 @@ export function SelectableTranslation({
 }: SelectableTranslationProps) {
   const { t } = useBibleLabels();
   const containerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const rangeRef = useRef<Range | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const pendingTouchSelectionRef = useRef(false);
+  const retryTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeSelectionTextRef = useRef<string | null>(null);
   const [selection, setSelection] = useState<SelectionState | null>(null);
+  const [fallbackRects, setFallbackRects] = useState<DOMRect[]>([]);
   const [translation, setTranslation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const clearRetryTimers = useCallback(() => {
+    for (const timer of retryTimersRef.current) {
+      clearTimeout(timer);
+    }
+    retryTimersRef.current = [];
+    pendingTouchSelectionRef.current = false;
+  }, []);
+
   const clearSelection = useCallback(() => {
+    clearRetryTimers();
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     abortRef.current?.abort();
     abortRef.current = null;
+    rangeRef.current = null;
+    activeSelectionTextRef.current = null;
+    applySelectionHighlight(null);
+    setFallbackRects([]);
     setSelection(null);
     setTranslation(null);
     setLoading(false);
     setError(null);
-  }, []);
+  }, [clearRetryTimers]);
 
-  const processSelection = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  const processSelection = useCallback(
+    (options?: { allowClear?: boolean }) => {
+      const allowClear = options?.allowClear ?? true;
+      const container = containerRef.current;
+      if (!container) return false;
 
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !isSelectionInside(sel, container)) {
-      clearSelection();
-      return;
-    }
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !isSelectionInside(sel, container)) {
+        if (allowClear && !pendingTouchSelectionRef.current) {
+          clearSelection();
+        }
+        return false;
+      }
 
-    const text = sel.toString().trim();
-    if (
-      text.length < MIN_SELECTION_LENGTH ||
-      text.length > MAX_SELECTION_LENGTH
-    ) {
-      clearSelection();
-      return;
-    }
+      const text = sel.toString().trim();
+      if (
+        text.length < MIN_SELECTION_LENGTH ||
+        text.length > MAX_SELECTION_LENGTH
+      ) {
+        if (allowClear && !pendingTouchSelectionRef.current) {
+          clearSelection();
+        }
+        return false;
+      }
 
-    const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) {
-      clearSelection();
-      return;
-    }
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        if (allowClear && !pendingTouchSelectionRef.current) {
+          clearSelection();
+        }
+        return false;
+      }
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+      clearRetryTimers();
+      pendingTouchSelectionRef.current = false;
 
-    setSelection({ text, position: clampPopupPosition(rect) });
-    setTranslation(null);
-    setError(null);
-    setLoading(true);
+      rangeRef.current = range.cloneRange();
+      applySelectionHighlight(rangeRef.current);
 
-    void translateText(text, sourceLang, targetLang, controller.signal)
-      .then((result) => {
-        if (controller.signal.aborted) return;
-        setTranslation(result);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (controller.signal.aborted) return;
-        setError(
-          err instanceof Error ? err.message : t("bible.translateError")
-        );
-        setLoading(false);
+      const popupWidth = Math.min(
+        POPUP_ESTIMATED_WIDTH,
+        window.innerWidth - POPUP_MARGIN * 2
+      );
+      const position = computePopupPosition(
+        rect,
+        POPUP_ESTIMATED_HEIGHT,
+        popupWidth
+      );
+
+      if (activeSelectionTextRef.current === text) {
+        setSelection({ text, rect, position });
+        return true;
+      }
+
+      activeSelectionTextRef.current = text;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      setSelection({
+        text,
+        rect,
+        position,
       });
-  }, [clearSelection, sourceLang, targetLang, t]);
+      setTranslation(null);
+      setError(null);
+      setLoading(true);
+
+      void translateText(text, sourceLang, targetLang, controller.signal)
+        .then((result) => {
+          if (controller.signal.aborted) return;
+          setTranslation(result);
+          setLoading(false);
+        })
+        .catch((err: unknown) => {
+          if (controller.signal.aborted) return;
+          setError(
+            err instanceof Error ? err.message : t("bible.translateError")
+          );
+          setLoading(false);
+        });
+
+      return true;
+    },
+    [clearSelection, clearRetryTimers, sourceLang, targetLang, t]
+  );
+
+  const scheduleSelectionProcessing = useCallback(() => {
+    clearRetryTimers();
+    pendingTouchSelectionRef.current = true;
+
+    for (const delay of MOBILE_SELECTION_RETRIES_MS) {
+      const timer = setTimeout(() => {
+        processSelection({ allowClear: false });
+      }, delay);
+      retryTimersRef.current.push(timer);
+    }
+
+    const finalizeTimer = setTimeout(() => {
+      pendingTouchSelectionRef.current = false;
+      processSelection({ allowClear: true });
+    }, MOBILE_SELECTION_RETRIES_MS[MOBILE_SELECTION_RETRIES_MS.length - 1] + 100);
+    retryTimersRef.current.push(finalizeTimer);
+  }, [clearRetryTimers, processSelection]);
 
   const handleSelectionEnd = useCallback(() => {
-    requestAnimationFrame(processSelection);
-  }, [processSelection]);
+    scheduleSelectionProcessing();
+  }, [scheduleSelectionProcessing]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    const handleSelectionChange = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        debounceTimerRef.current = null;
+        processSelection();
+      }, SELECTION_DEBOUNCE_MS);
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
     container.addEventListener("mouseup", handleSelectionEnd);
-    container.addEventListener("touchend", handleSelectionEnd);
+    container.addEventListener("pointerup", handleSelectionEnd);
+    container.addEventListener("touchend", handleSelectionEnd, {
+      passive: true,
+    });
 
     return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
       container.removeEventListener("mouseup", handleSelectionEnd);
+      container.removeEventListener("pointerup", handleSelectionEnd);
       container.removeEventListener("touchend", handleSelectionEnd);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      clearRetryTimers();
     };
-  }, [handleSelectionEnd]);
+  }, [handleSelectionEnd, processSelection, clearRetryTimers]);
+
+  useLayoutEffect(() => {
+    if (!selection || !popupRef.current) return;
+
+    const popup = popupRef.current;
+    const popupHeight = popup.offsetHeight;
+    const popupWidth = popup.offsetWidth;
+    const nextPosition = computePopupPosition(
+      selection.rect,
+      popupHeight,
+      popupWidth
+    );
+
+    setSelection((current) => {
+      if (!current) return current;
+      if (
+        current.position.top === nextPosition.top &&
+        current.position.left === nextPosition.left &&
+        current.position.placement === nextPosition.placement
+      ) {
+        return current;
+      }
+      return { ...current, position: nextPosition };
+    });
+  }, [selection?.text, loading, error, translation]);
+
+  useEffect(() => {
+    if (!selection || !rangeRef.current || supportsCssHighlightApi()) return;
+
+    const updateFallbackRects = () => {
+      if (!rangeRef.current) return;
+      setFallbackRects(Array.from(rangeRef.current.getClientRects()));
+    };
+
+    updateFallbackRects();
+    window.addEventListener("scroll", updateFallbackRects, true);
+    window.addEventListener("resize", updateFallbackRects);
+
+    return () => {
+      window.removeEventListener("scroll", updateFallbackRects, true);
+      window.removeEventListener("resize", updateFallbackRects);
+    };
+  }, [selection]);
 
   useEffect(() => {
     if (!selection) return;
@@ -196,24 +399,36 @@ export function SelectableTranslation({
     <>
       <div
         ref={containerRef}
-        className={cn("select-text", className)}
+        className={cn("bible-selectable-text select-text", className)}
         title={t("bible.selectToTranslate")}
       >
         {children}
       </div>
 
+      {selection &&
+        fallbackRects.map((rect, index) => (
+          <span
+            key={`selection-highlight-${index}`}
+            aria-hidden
+            className="pointer-events-none fixed z-40 rounded-sm bg-amber-300/50 dark:bg-amber-500/35"
+            style={{
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+            }}
+          />
+        ))}
+
       {selection && (
         <div
+          ref={popupRef}
           id="bible-translate-popup"
           role="tooltip"
           className="pointer-events-auto fixed z-50 w-[min(280px,calc(100vw-16px))] animate-scale-in"
           style={{
             top: selection.position.top,
             left: selection.position.left,
-            transform:
-              selection.position.placement === "above"
-                ? "translateY(-100%)"
-                : undefined,
           }}
         >
           <div className="rounded-xl border border-amber-200/80 bg-card px-3 py-2.5 shadow-lg shadow-amber-900/10 dark:border-amber-800/60">

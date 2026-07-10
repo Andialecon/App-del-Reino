@@ -138,6 +138,21 @@ export const en: Messages = {
     translating: "Translating...",
     translateError: "Could not translate",
     translateTo: "→ {language}",
+    fullscreen: {
+      enter: "Fullscreen",
+      exit: "Exit fullscreen",
+    },
+    display: {
+      title: "Display",
+      settingsLabel: "Display settings",
+      close: "Close",
+      fontSize: "Font size",
+      lineHeight: "Line height",
+      fontFamily: "Font",
+      fontSans: "Sans",
+      fontSerif: "Serif",
+      reset: "Reset to defaults",
+    },
     versions: {
       rv1960: {
         shortName: "RV60",

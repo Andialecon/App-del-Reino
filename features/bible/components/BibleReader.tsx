@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   BookMarked,
   BookOpen,
   ChevronLeft,
+  Maximize2,
   ScrollText,
 } from "lucide-react";
 import { fetchChapter } from "@/features/bible/api";
-import { SelectableTranslation } from "@/features/bible/components/SelectableTranslation";
+import { BibleDisplaySettingsPanel } from "@/features/bible/components/BibleDisplaySettingsPanel";
+import { BiblePassageView } from "@/features/bible/components/BiblePassageView";
 import { VersionSwitcher } from "@/features/bible/components/VersionSwitcher";
 import { getBookById, getBooksByTestament } from "@/features/bible/data/books";
 import {
@@ -20,6 +22,8 @@ import {
 } from "@/features/bible/types";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { IconButton } from "@/components/ui/IconButton";
+import { useBibleDisplaySettings } from "@/hooks/useBibleDisplaySettings";
 import { useBibleLabels } from "@/hooks/useBibleLabels";
 import { useBibleVersion } from "@/hooks/useBibleVersion";
 import { cn } from "@/utils/cn";
@@ -30,10 +34,12 @@ function StepHeader({
   title,
   subtitle,
   onBack,
+  actions,
 }: {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  actions?: ReactNode;
 }) {
   const { t } = useBibleLabels();
 
@@ -55,6 +61,9 @@ function StepHeader({
           <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
+      {actions && (
+        <div className="flex shrink-0 items-center gap-1">{actions}</div>
+      )}
     </div>
   );
 }
@@ -393,6 +402,8 @@ function ReadStep({
   onVersionChange: (version: BibleVersionCode) => void;
 }) {
   const { t, testamentLabel, bookName, versionMeta } = useBibleLabels();
+  const { settings, updateSettings, resetSettings } = useBibleDisplaySettings();
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const name = bookName(book);
   const versionDef = getBibleVersionDef(version);
   const targetLang = versionDef.language === "es" ? "en" : "es";
@@ -405,12 +416,28 @@ function ReadStep({
   const reference =
     verse != null ? `${name} ${chapter}:${verse}` : `${name} ${chapter}`;
 
+  const displayToolbar = (
+    <>
+      <IconButton
+        icon={Maximize2}
+        label={t("bible.fullscreen.enter")}
+        onClick={() => setIsFullscreen(true)}
+      />
+      <BibleDisplaySettingsPanel
+        settings={settings}
+        onUpdate={updateSettings}
+        onReset={resetSettings}
+      />
+    </>
+  );
+
   return (
     <div className="space-y-4 animate-fade-in">
       <StepHeader
         title={reference}
         subtitle={versionMeta(version).name}
         onBack={onBack}
+        actions={!isFullscreen ? displayToolbar : undefined}
       />
       <VersionSwitcher value={version} onChange={onVersionChange} />
       <Breadcrumb
@@ -451,32 +478,25 @@ function ReadStep({
         </div>
       )}
 
-      <article className="rounded-2xl border border-border bg-gradient-to-b from-amber-50/40 via-card to-card p-5 shadow-sm dark:from-amber-950/20">
-        <SelectableTranslation
-          sourceLang={versionDef.language}
-          targetLang={targetLang}
-          className="space-y-4"
-        >
-          {displayed.map((v) => (
-            <p key={v.number} className="text-[16px] leading-[1.75]">
-              {v.study && (
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                  {v.study}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => onChangeVerse(v.number)}
-                className="mr-1.5 inline align-super text-xs font-bold text-amber-600 hover:underline dark:text-amber-400"
-                aria-label={t("bible.verseLabel", { number: v.number })}
-              >
-                {v.number}
-              </button>
-              {v.text}
-            </p>
-          ))}
-        </SelectableTranslation>
-      </article>
+      <BiblePassageView
+        verses={displayed}
+        display={settings}
+        sourceLang={versionDef.language}
+        targetLang={targetLang}
+        isFullscreen={isFullscreen}
+        onExitFullscreen={() => setIsFullscreen(false)}
+        onChangeVerse={onChangeVerse}
+        reference={reference}
+        toolbar={
+          isFullscreen ? (
+            <BibleDisplaySettingsPanel
+              settings={settings}
+              onUpdate={updateSettings}
+              onReset={resetSettings}
+            />
+          ) : undefined
+        }
+      />
 
       {verse != null && (
         <button

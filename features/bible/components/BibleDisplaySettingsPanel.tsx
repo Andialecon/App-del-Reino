@@ -1,41 +1,34 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import {
-  Settings2,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-} from "lucide-react";
-import type { HymnDisplaySettings } from "@/features/hymns/types";
+import { Settings2, Type } from "lucide-react";
+import type { BibleDisplaySettings, BibleFontFamily } from "@/features/bible/types";
 import { IconButton } from "@/components/ui/IconButton";
-import { Switch } from "@/components/ui/Switch";
+import { useBibleLabels } from "@/hooks/useBibleLabels";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { cn } from "@/utils/cn";
 
-const ALIGN_OPTIONS: {
-  value: HymnDisplaySettings["textAlign"];
-  icon: typeof AlignLeft;
-  label: string;
+const FONT_OPTIONS: {
+  value: BibleFontFamily;
+  icon: typeof Type;
+  labelKey: "bible.display.fontSans" | "bible.display.fontSerif";
 }[] = [
-  { value: "left", icon: AlignLeft, label: "Izquierda" },
-  { value: "center", icon: AlignCenter, label: "Centro" },
-  { value: "right", icon: AlignRight, label: "Derecha" },
-  { value: "justify", icon: AlignJustify, label: "Justificado" },
+  { value: "sans", icon: Type, labelKey: "bible.display.fontSans" },
+  { value: "serif", icon: Type, labelKey: "bible.display.fontSerif" },
 ];
 
-interface HymnDisplaySettingsPanelProps {
-  settings: HymnDisplaySettings;
-  onUpdate: (patch: Partial<HymnDisplaySettings>) => void;
+interface BibleDisplaySettingsPanelProps {
+  settings: BibleDisplaySettings;
+  onUpdate: (patch: Partial<BibleDisplaySettings>) => void;
   onReset: () => void;
 }
 
-export function HymnDisplaySettingsPanel({
+export function BibleDisplaySettingsPanel({
   settings,
   onUpdate,
   onReset,
-}: HymnDisplaySettingsPanelProps) {
+}: BibleDisplaySettingsPanelProps) {
+  const { t } = useBibleLabels();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -46,37 +39,27 @@ export function HymnDisplaySettingsPanel({
     <div ref={rootRef} className="relative">
       <IconButton
         icon={Settings2}
-        label="Configuración de visualización"
+        label={t("bible.display.settingsLabel")}
         onClick={() => setOpen((v) => !v)}
         className={cn(open && "bg-accent text-accent-foreground")}
       />
 
       {open && (
-        <div
-          className="absolute right-0 top-full z-50 mt-2 w-[min(100vw-2rem,18rem)] rounded-2xl border border-border bg-card p-4 shadow-lg animate-scale-in"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold">Visualización</p>
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(100vw-2rem,18rem)] rounded-2xl border border-border bg-card p-4 shadow-lg animate-scale-in">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold">{t("bible.display.title")}</p>
             <button
               type="button"
               onClick={close}
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              Cerrar
+              {t("bible.display.close")}
             </button>
           </div>
 
           <div className="space-y-4">
-            <Switch
-              checked={settings.musicianMode}
-              onCheckedChange={(checked) => onUpdate({ musicianMode: checked })}
-              label="Modo músico"
-              description="Acordes y transportador de tonalidad"
-              className="border-0 bg-transparent p-0"
-            />
-
             <SliderField
-              label="Tamaño de fuente"
+              label={t("bible.display.fontSize")}
               value={settings.fontSize}
               min={12}
               max={28}
@@ -86,7 +69,7 @@ export function HymnDisplaySettingsPanel({
             />
 
             <SliderField
-              label="Interlineado"
+              label={t("bible.display.lineHeight")}
               value={settings.lineHeight}
               min={1}
               max={2.5}
@@ -96,24 +79,29 @@ export function HymnDisplaySettingsPanel({
             />
 
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                Justificación
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                {t("bible.display.fontFamily")}
               </p>
-              <div className="flex gap-1">
-                {ALIGN_OPTIONS.map(({ value, icon: Icon, label }) => (
+              <div className="flex gap-2">
+                {FONT_OPTIONS.map(({ value, labelKey }) => (
                   <button
                     key={value}
                     type="button"
-                    title={label}
-                    onClick={() => onUpdate({ textAlign: value })}
+                    onClick={() => onUpdate({ fontFamily: value })}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
-                      settings.textAlign === value
+                      "flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors",
+                      settings.fontFamily === value
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-accent"
                     )}
+                    style={{
+                      fontFamily:
+                        value === "serif"
+                          ? "var(--font-lora), Georgia, serif"
+                          : "var(--font-geist-sans), system-ui, sans-serif",
+                    }}
                   >
-                    <Icon size={18} />
+                    {t(labelKey)}
                   </button>
                 ))}
               </div>
@@ -122,9 +110,9 @@ export function HymnDisplaySettingsPanel({
             <button
               type="button"
               onClick={onReset}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              Restaurar valores
+              {t("bible.display.reset")}
             </button>
           </div>
         </div>
@@ -152,9 +140,9 @@ function SliderField({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <span className="text-xs font-mono font-semibold">{display}</span>
+        <span className="font-mono text-xs font-semibold">{display}</span>
       </div>
       <input
         type="range"

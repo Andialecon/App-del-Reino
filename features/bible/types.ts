@@ -61,6 +61,20 @@ export function isValidBibleVersion(code: string): code is BibleVersionCode {
   return BIBLE_VERSION_CODES.includes(code as BibleVersionCode);
 }
 
+export type BibleFontFamily = "sans" | "serif";
+
+export interface BibleDisplaySettings {
+  fontSize: number;
+  lineHeight: number;
+  fontFamily: BibleFontFamily;
+}
+
+export const DEFAULT_BIBLE_DISPLAY: BibleDisplaySettings = {
+  fontSize: 16,
+  lineHeight: 1.75,
+  fontFamily: "sans",
+};
+
 /** @deprecated Usar getBibleVersionDef + traducciones i18n */
 export const TESTAMENT_LABELS: Record<TestamentId, string> = {
   AT: "Antiguo Testamento",
