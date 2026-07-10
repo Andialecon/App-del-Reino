@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getBollsBookId } from "@/features/bible/data/books";
 import {
   BIBLE_VERSION_DEFINITIONS,
   isValidBibleVersion,
@@ -67,8 +68,13 @@ export async function GET(request: NextRequest) {
 
   try {
     if (version === "niv") {
+      const bollsBookId = getBollsBookId(book);
+      if (!bollsBookId) {
+        return NextResponse.json({ error: "Libro inválido." }, { status: 400 });
+      }
+
       const upstream = await fetch(
-        `${BOLLS_API_BASE}/NIV/${book}/${chapterNum}/`,
+        `${BOLLS_API_BASE}/NIV/${bollsBookId}/${chapterNum}/`,
         {
           headers: { Accept: "application/json" },
           next: { revalidate: 86400 },

@@ -77,3 +77,9 @@ export function getBooksByTestament(testament: BibleBook["testament"]): BibleBoo
 export function getBookById(id: string): BibleBook | undefined {
   return BIBLE_BOOKS.find((b) => b.id === id);
 }
+
+/** ID numérico canónico (1–66) usado por bolls.life para NIV */
+export function getBollsBookId(id: string): number | undefined {
+  const index = BIBLE_BOOKS.findIndex((b) => b.id === id);
+  return index >= 0 ? index + 1 : undefined;
+}
