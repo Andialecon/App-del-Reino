@@ -5,18 +5,24 @@ import {
 } from "@/features/bible/types";
 
 const DENO_API_BASE = "https://bible-api.deno.dev/api/read";
-const MIDVASH_API_BASE = "https://api.midvash.com/v1";
+const BOLLS_API_BASE = "https://bolls.life/get-text";
 
 const DENO_VERSIONS = new Set(
   BIBLE_VERSION_DEFINITIONS.filter((v) => v.api === "deno").map((v) => v.code)
 );
 
-interface MidvashChapterResponse {
-  data?: {
-    bookName?: string;
-    chapter?: number;
-    verses?: string[];
-  };
+interface BollsVerse {
+  pk?: number;
+  verse: number;
+  text: string;
+}
+
+function stripHtml(text: string): string {
+  return text
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function GET(request: NextRequest) {
@@ -62,7 +68,7 @@ export async function GET(request: NextRequest) {
   try {
     if (version === "niv") {
       const upstream = await fetch(
-        `${MIDVASH_API_BASE}/niv/${book}/${chapterNum}`,
+        `${BOLLS_API_BASE}/NIV/${book}/${chapterNum}/`,
         {
           headers: { Accept: "application/json" },
           next: { revalidate: 86400 },
@@ -76,10 +82,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const payload = (await upstream.json()) as MidvashChapterResponse;
-      const verses = payload.data?.verses ?? [];
+      const verses = (await upstream.json()) as BollsVerse[];
 
-      if (verses.length === 0) {
+      if (!Array.isArray(verses) || verses.length === 0) {
         return NextResponse.json(
           { error: "Este capítulo no tiene versículos disponibles." },
           { status: 404 }
@@ -87,12 +92,11 @@ export async function GET(request: NextRequest) {
       }
 
       const data = {
-        name: payload.data?.bookName,
-        chapter: payload.data?.chapter ?? chapterNum,
-        vers: verses.map((text, index) => ({
-          verse: text,
-          number: index + 1,
-          id: index + 1,
+        chapter: chapterNum,
+        vers: verses.map((item) => ({
+          verse: stripHtml(item.text),
+          number: item.verse,
+          id: item.pk ?? item.verse,
         })),
       };
 

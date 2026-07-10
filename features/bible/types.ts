@@ -4,7 +4,7 @@ export type TestamentId = "AT" | "NT";
 
 export type BibleVersionCode = "rv1960" | "nvi" | "kjv" | "niv";
 
-export type BibleApiSource = "deno" | "midvash";
+export type BibleApiSource = "deno" | "bolls";
 
 export interface BibleVersionDef {
   code: BibleVersionCode;
@@ -41,7 +41,7 @@ export const BIBLE_VERSION_DEFINITIONS: BibleVersionDef[] = [
   { code: "rv1960", language: "es", pair: "kjv", api: "deno" },
   { code: "nvi", language: "es", pair: "niv", api: "deno" },
   { code: "kjv", language: "en", pair: "rv1960", api: "deno" },
-  { code: "niv", language: "en", pair: "nvi", api: "midvash" },
+  { code: "niv", language: "en", pair: "nvi", api: "bolls" },
 ];
 
 export const BIBLE_VERSION_CODES = BIBLE_VERSION_DEFINITIONS.map((v) => v.code);
