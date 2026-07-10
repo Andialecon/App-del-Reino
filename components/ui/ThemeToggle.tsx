@@ -4,9 +4,11 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
+import { useTranslation } from "@/components/providers/LocaleProvider";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function ThemeToggle() {
   return (
     <IconButton
       icon={isDark ? Sun : Moon}
-      label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      label={isDark ? t("theme.light") : t("theme.dark")}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     />
   );

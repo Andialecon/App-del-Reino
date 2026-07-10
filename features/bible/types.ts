@@ -1,11 +1,17 @@
+import type { Locale } from "@/lib/i18n";
+
 export type TestamentId = "AT" | "NT";
 
-export type BibleVersionCode = "rv1960" | "nvi";
+export type BibleVersionCode = "rv1960" | "nvi" | "kjv" | "niv";
 
-export interface BibleVersion {
+export type BibleApiSource = "deno" | "midvash";
+
+export interface BibleVersionDef {
   code: BibleVersionCode;
-  shortName: string;
-  name: string;
+  language: Locale;
+  /** Equivalente en el otro idioma (RV60↔KJV, NVI↔NIV) */
+  pair: BibleVersionCode;
+  api: BibleApiSource;
 }
 
 export interface BibleBook {
@@ -31,26 +37,32 @@ export interface BibleChapter {
   version: BibleVersionCode;
 }
 
+export const BIBLE_VERSION_DEFINITIONS: BibleVersionDef[] = [
+  { code: "rv1960", language: "es", pair: "kjv", api: "deno" },
+  { code: "nvi", language: "es", pair: "niv", api: "deno" },
+  { code: "kjv", language: "en", pair: "rv1960", api: "deno" },
+  { code: "niv", language: "en", pair: "nvi", api: "midvash" },
+];
+
+export const BIBLE_VERSION_CODES = BIBLE_VERSION_DEFINITIONS.map((v) => v.code);
+
+export function getBibleVersionDef(code: BibleVersionCode): BibleVersionDef {
+  return (
+    BIBLE_VERSION_DEFINITIONS.find((v) => v.code === code) ??
+    BIBLE_VERSION_DEFINITIONS[0]
+  );
+}
+
+export function getDefaultBibleVersion(locale: Locale): BibleVersionCode {
+  return locale === "en" ? "niv" : "rv1960";
+}
+
+export function isValidBibleVersion(code: string): code is BibleVersionCode {
+  return BIBLE_VERSION_CODES.includes(code as BibleVersionCode);
+}
+
+/** @deprecated Usar getBibleVersionDef + traducciones i18n */
 export const TESTAMENT_LABELS: Record<TestamentId, string> = {
   AT: "Antiguo Testamento",
   NT: "Nuevo Testamento",
 };
-
-export const BIBLE_VERSIONS: BibleVersion[] = [
-  {
-    code: "rv1960",
-    shortName: "RV60",
-    name: "Reina Valera 1960",
-  },
-  {
-    code: "nvi",
-    shortName: "NVI",
-    name: "Nueva Versión Internacional",
-  },
-];
-
-export const DEFAULT_BIBLE_VERSION: BibleVersionCode = "rv1960";
-
-export function getBibleVersion(code: BibleVersionCode): BibleVersion {
-  return BIBLE_VERSIONS.find((v) => v.code === code) ?? BIBLE_VERSIONS[0];
-}

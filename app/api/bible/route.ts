@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  BIBLE_VERSION_DEFINITIONS,
+  isValidBibleVersion,
+} from "@/features/bible/types";
 
-const BIBLE_API_BASE = "https://bible-api.deno.dev/api/read";
-const ALLOWED_VERSIONS = new Set(["rv1960", "nvi"]);
+const DENO_API_BASE = "https://bible-api.deno.dev/api/read";
+const MIDVASH_API_BASE = "https://api.midvash.com/v1";
+
+const DENO_VERSIONS = new Set(
+  BIBLE_VERSION_DEFINITIONS.filter((v) => v.api === "deno").map((v) => v.code)
+);
+
+interface MidvashChapterResponse {
+  data?: {
+    bookName?: string;
+    chapter?: number;
+    verses?: string[];
+  };
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -17,9 +33,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!ALLOWED_VERSIONS.has(version)) {
+  if (!isValidBibleVersion(version)) {
     return NextResponse.json(
-      { error: "Versión no soportada. Usa rv1960 o nvi." },
+      { error: "Versión no soportada." },
+      { status: 400 }
+    );
+  }
+
+  if (verse) {
+    return NextResponse.json(
+      { error: "Solo se admite lectura por capítulo completo." },
       { status: 400 }
     );
   }
@@ -36,19 +59,59 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Libro inválido." }, { status: 400 });
   }
 
-  let path = `${BIBLE_API_BASE}/${version}/${book}/${chapterNum}`;
-  if (verse) {
-    const verseNum = Number(verse);
-    if (!Number.isInteger(verseNum) || verseNum < 1) {
+  try {
+    if (version === "niv") {
+      const upstream = await fetch(
+        `${MIDVASH_API_BASE}/niv/${book}/${chapterNum}`,
+        {
+          headers: { Accept: "application/json" },
+          next: { revalidate: 86400 },
+        }
+      );
+
+      if (!upstream.ok) {
+        return NextResponse.json(
+          { error: "No se encontró el pasaje solicitado." },
+          { status: upstream.status === 404 ? 404 : 502 }
+        );
+      }
+
+      const payload = (await upstream.json()) as MidvashChapterResponse;
+      const verses = payload.data?.verses ?? [];
+
+      if (verses.length === 0) {
+        return NextResponse.json(
+          { error: "Este capítulo no tiene versículos disponibles." },
+          { status: 404 }
+        );
+      }
+
+      const data = {
+        name: payload.data?.bookName,
+        chapter: payload.data?.chapter ?? chapterNum,
+        vers: verses.map((text, index) => ({
+          verse: text,
+          number: index + 1,
+          id: index + 1,
+        })),
+      };
+
+      return NextResponse.json(data, {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      });
+    }
+
+    if (!DENO_VERSIONS.has(version)) {
       return NextResponse.json(
-        { error: "El versículo debe ser un número entero positivo." },
+        { error: "Versión no soportada." },
         { status: 400 }
       );
     }
-    path += `/${verseNum}`;
-  }
 
-  try {
+    const path = `${DENO_API_BASE}/${version}/${book}/${chapterNum}`;
     const upstream = await fetch(path, {
       headers: { Accept: "application/json" },
       next: { revalidate: 86400 },
@@ -64,7 +127,8 @@ export async function GET(request: NextRequest) {
     const data: unknown = await upstream.json();
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+        "Cache-Control":
+          "public, s-maxage=86400, stale-while-revalidate=604800",
       },
     });
   } catch {

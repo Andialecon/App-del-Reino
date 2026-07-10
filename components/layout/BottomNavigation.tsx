@@ -3,16 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BOTTOM_NAV_ITEMS, isActiveRoute } from "@/utils/navigation";
+import { useTranslation } from "@/components/providers/LocaleProvider";
 import { cn } from "@/utils/cn";
 import { BOTTOM_NAV_HEIGHT } from "@/lib/constants";
 
+const NAV_LABEL_KEYS: Record<string, string> = {
+  home: "nav.home",
+  community: "nav.community",
+  profile: "nav.profile",
+};
+
 export function BottomNavigation() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-nav-background/95 backdrop-blur-md safe-bottom"
-      aria-label="Navegación principal"
+      aria-label={t("nav.mainNav")}
       style={{
         height: `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
       }}
@@ -21,6 +29,7 @@ export function BottomNavigation() {
         {BOTTOM_NAV_ITEMS.map((item) => {
           const isActive = isActiveRoute(pathname, item.href);
           const Icon = item.icon;
+          const label = t(NAV_LABEL_KEYS[item.id] ?? item.id);
 
           return (
             <Link
@@ -43,7 +52,7 @@ export function BottomNavigation() {
                 )}
               />
               <span className={cn("text-xs font-medium", isActive && "font-semibold")}>
-                {item.name}
+                {label}
               </span>
             </Link>
           );

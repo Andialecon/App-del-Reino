@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { IconButton } from "@/components/ui/IconButton";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { useTranslation } from "@/components/providers/LocaleProvider";
 import { getModuleByHref } from "@/lib/modules";
 import { cn } from "@/utils/cn";
 import { HEADER_HEIGHT } from "@/lib/constants";
@@ -18,9 +20,12 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showBack, onBack, title }: HeaderProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const isHome = pathname === "/home";
   const currentModule = !isHome ? getModuleByHref(pathname) : undefined;
-  const displayTitle = title ?? currentModule?.name ?? "Inicio";
+  const displayTitle =
+    title ??
+    (currentModule ? t(`modules.${currentModule.id}.name`) : t("common.home"));
 
   return (
     <header
@@ -50,13 +55,13 @@ export function Header({ onMenuClick, showBack, onBack, title }: HeaderProps) {
               >
                 <path d="M15 18l-6-6 6-6" />
               </svg>
-              Volver
+              {t("common.back")}
             </button>
           ) : (
             <>
               <IconButton
                 icon={Menu}
-                label="Abrir menú"
+                label={t("nav.openMenu")}
                 onClick={onMenuClick}
               />
               {isHome ? (
@@ -69,6 +74,7 @@ export function Header({ onMenuClick, showBack, onBack, title }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1">
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </div>

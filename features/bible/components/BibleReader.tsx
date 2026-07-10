@@ -8,12 +8,11 @@ import {
   ScrollText,
 } from "lucide-react";
 import { fetchChapter } from "@/features/bible/api";
+import { SelectableTranslation } from "@/features/bible/components/SelectableTranslation";
 import { getBookById, getBooksByTestament } from "@/features/bible/data/books";
 import {
-  BIBLE_VERSIONS,
-  DEFAULT_BIBLE_VERSION,
-  TESTAMENT_LABELS,
-  getBibleVersion,
+  BIBLE_VERSION_DEFINITIONS,
+  getBibleVersionDef,
   type BibleBook,
   type BibleChapter,
   type BibleVersionCode,
@@ -21,6 +20,8 @@ import {
 } from "@/features/bible/types";
 import { Loading } from "@/components/ui/Loading";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useBibleLabels } from "@/hooks/useBibleLabels";
+import { useBibleVersion } from "@/hooks/useBibleVersion";
 import { cn } from "@/utils/cn";
 
 type Step = "testament" | "book" | "chapter" | "verse" | "read";
@@ -32,40 +33,43 @@ function VersionSwitcher({
   value: BibleVersionCode;
   onChange: (version: BibleVersionCode) => void;
 }) {
+  const { t, versionMeta } = useBibleLabels();
+
+  const spanishVersions = BIBLE_VERSION_DEFINITIONS.filter(
+    (def) => def.language === "es"
+  );
+  const englishVersions = BIBLE_VERSION_DEFINITIONS.filter(
+    (def) => def.language === "en"
+  );
+
   return (
-    <div
-      className="flex rounded-xl border border-border bg-card p-1"
-      role="group"
-      aria-label="Versión de la Biblia"
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as BibleVersionCode)}
+      className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label={t("bible.versionLabel")}
     >
-      {BIBLE_VERSIONS.map((version) => {
-        const active = version.code === value;
-        return (
-          <button
-            key={version.code}
-            type="button"
-            onClick={() => onChange(version.code)}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-2 text-center transition-all",
-              active
-                ? "bg-amber-500 text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-pressed={active}
-          >
-            <span className="block text-sm font-semibold">{version.shortName}</span>
-            <span
-              className={cn(
-                "mt-0.5 block text-[10px] leading-tight",
-                active ? "text-white/85" : "text-muted-foreground"
-              )}
-            >
-              {version.name}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+      <optgroup label={t("language.es")}>
+        {spanishVersions.map((def) => {
+          const meta = versionMeta(def.code);
+          return (
+            <option key={def.code} value={def.code}>
+              {meta.shortName} — {meta.name}
+            </option>
+          );
+        })}
+      </optgroup>
+      <optgroup label={t("language.en")}>
+        {englishVersions.map((def) => {
+          const meta = versionMeta(def.code);
+          return (
+            <option key={def.code} value={def.code}>
+              {meta.shortName} — {meta.name}
+            </option>
+          );
+        })}
+      </optgroup>
+    </select>
   );
 }
 
@@ -78,6 +82,8 @@ function StepHeader({
   subtitle?: string;
   onBack?: () => void;
 }) {
+  const { t } = useBibleLabels();
+
   return (
     <div className="flex items-start gap-2">
       {onBack && (
@@ -85,7 +91,7 @@ function StepHeader({
           type="button"
           onClick={onBack}
           className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground transition-colors hover:bg-accent"
-          aria-label="Volver"
+          aria-label={t("common.back")}
         >
           <ChevronLeft size={18} />
         </button>
@@ -107,11 +113,13 @@ function Breadcrumb({
   items: { label: string; step: Step }[];
   onNavigate: (step: Step) => void;
 }) {
+  const { t } = useBibleLabels();
+
   if (items.length === 0) return null;
 
   return (
     <nav
-      aria-label="Navegación del pasaje"
+      aria-label={t("bible.passageNav")}
       className="flex flex-wrap items-center gap-1.5"
     >
       {items.map((item, index) => (
@@ -178,23 +186,25 @@ function TestamentStep({
   onVersionChange: (version: BibleVersionCode) => void;
   onSelect: (id: TestamentId) => void;
 }) {
+  const { t, testamentLabel, versionMeta } = useBibleLabels();
+
   const options: {
     id: TestamentId;
     icon: typeof BookMarked;
-    hint: string;
+    hintKey: "bible.otHint" | "bible.ntHint";
     accent: string;
   }[] = [
     {
       id: "AT",
       icon: ScrollText,
-      hint: "39 libros · Desde Génesis",
+      hintKey: "bible.otHint",
       accent:
         "from-amber-50 to-orange-50/80 hover:border-amber-400 dark:from-amber-950/40 dark:to-orange-950/20 dark:hover:border-amber-600",
     },
     {
       id: "NT",
       icon: BookOpen,
-      hint: "27 libros · Desde Mateo",
+      hintKey: "bible.ntHint",
       accent:
         "from-sky-50 to-indigo-50/80 hover:border-sky-400 dark:from-sky-950/40 dark:to-indigo-950/20 dark:hover:border-sky-600",
     },
@@ -202,11 +212,14 @@ function TestamentStep({
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <StepHeader title="Biblia" subtitle={getBibleVersion(version).name} />
+      <StepHeader
+        title={t("bible.title")}
+        subtitle={versionMeta(version).name}
+      />
       <VersionSwitcher value={version} onChange={onVersionChange} />
-      <p className="text-sm text-muted-foreground">¿Qué testamento quieres leer?</p>
+      <p className="text-sm text-muted-foreground">{t("bible.testamentQuestion")}</p>
       <div className="grid gap-3">
-        {options.map(({ id, icon: Icon, hint, accent }) => (
+        {options.map(({ id, icon: Icon, hintKey, accent }) => (
           <button
             key={id}
             type="button"
@@ -220,8 +233,8 @@ function TestamentStep({
               <Icon size={26} strokeWidth={1.75} />
             </div>
             <div className="min-w-0">
-              <p className="text-base font-semibold">{TESTAMENT_LABELS[id]}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{hint}</p>
+              <p className="text-base font-semibold">{testamentLabel(id)}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{t(hintKey)}</p>
             </div>
           </button>
         ))}
@@ -243,17 +256,19 @@ function BookListStep({
   onBack: () => void;
   onNavigate: (step: Step) => void;
 }) {
+  const { t, testamentLabel, bookName, chapterLabel } = useBibleLabels();
   const books = getBooksByTestament(testament);
+  const testamentName = testamentLabel(testament);
 
   return (
     <div className="space-y-4 animate-fade-in">
       <StepHeader
-        title="Libros"
-        subtitle={`${TESTAMENT_LABELS[testament]} · ${versionLabel}`}
+        title={t("bible.booksTitle")}
+        subtitle={`${testamentName} · ${versionLabel}`}
         onBack={onBack}
       />
       <Breadcrumb
-        items={[{ label: TESTAMENT_LABELS[testament], step: "testament" }]}
+        items={[{ label: testamentName, step: "testament" }]}
         onNavigate={onNavigate}
       />
       <ul className="space-y-2">
@@ -272,9 +287,9 @@ function BookListStep({
                 {book.abbrev}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-medium">{book.name}</span>
+                <span className="block font-medium">{bookName(book)}</span>
                 <span className="text-xs text-muted-foreground">
-                  {book.chapters} capítulo{book.chapters !== 1 ? "s" : ""}
+                  {chapterLabel(book.chapters)}
                 </span>
               </span>
             </button>
@@ -298,13 +313,16 @@ function ChapterStep({
   onBack: () => void;
   onNavigate: (step: Step) => void;
 }) {
+  const { t, testamentLabel, bookName } = useBibleLabels();
+  const name = bookName(book);
+
   return (
     <div className="space-y-4 animate-fade-in">
-      <StepHeader title="Capítulos" subtitle={book.name} onBack={onBack} />
+      <StepHeader title={t("bible.chapters")} subtitle={name} onBack={onBack} />
       <Breadcrumb
         items={[
-          { label: TESTAMENT_LABELS[testament], step: "testament" },
-          { label: book.name, step: "book" },
+          { label: testamentLabel(testament), step: "testament" },
+          { label: name, step: "book" },
         ]}
         onNavigate={onNavigate}
       />
@@ -338,33 +356,42 @@ function VerseStep({
   onNavigate: (step: Step) => void;
   onRetry: () => void;
 }) {
+  const { t, testamentLabel, bookName } = useBibleLabels();
+  const name = bookName(book);
+
   return (
     <div className="space-y-4 animate-fade-in">
       <StepHeader
-        title="Versículos"
-        subtitle={`${book.name} ${chapter}`}
+        title={t("bible.verses")}
+        subtitle={`${name} ${chapter}`}
         onBack={onBack}
       />
       <Breadcrumb
         items={[
-          { label: TESTAMENT_LABELS[testament], step: "testament" },
-          { label: book.name, step: "book" },
-          { label: `Cap. ${chapter}`, step: "chapter" },
+          { label: testamentLabel(testament), step: "testament" },
+          { label: name, step: "book" },
+          { label: `${t("bible.chapterShort")} ${chapter}`, step: "chapter" },
         ]}
         onNavigate={onNavigate}
       />
 
-      {loading && <Loading label="Cargando versículos..." className="py-12" />}
+      {loading && (
+        <Loading label={t("bible.loadingVerses")} className="py-12" />
+      )}
 
       {!loading && error && (
         <div className="space-y-3">
-          <EmptyState icon={BookOpen} title="No se pudo cargar" description={error} />
+          <EmptyState
+            icon={BookOpen}
+            title={t("bible.loadError")}
+            description={error}
+          />
           <button
             type="button"
             onClick={onRetry}
             className="mx-auto block rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
           >
-            Reintentar
+            {t("common.retry")}
           </button>
         </div>
       )}
@@ -377,10 +404,10 @@ function VerseStep({
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 py-3.5 text-sm font-semibold text-amber-900 transition-all hover:bg-amber-100 active:scale-[0.99] dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-900/50"
           >
             <BookOpen size={18} />
-            Leer capítulo completo
+            {t("bible.readFullChapter")}
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            o elige un versículo
+            {t("bible.orPickVerse")}
           </p>
           <NumberGrid count={verseCount} onSelect={onSelectVerse} />
         </div>
@@ -412,29 +439,37 @@ function ReadStep({
   onChangeVerse: (verse: number | null) => void;
   onVersionChange: (version: BibleVersionCode) => void;
 }) {
+  const { t, testamentLabel, bookName, versionMeta } = useBibleLabels();
+  const name = bookName(book);
+  const versionDef = getBibleVersionDef(version);
+  const targetLang = versionDef.language === "es" ? "en" : "es";
+
   const displayed = useMemo(() => {
     if (verse == null) return data.verses;
     return data.verses.filter((v) => v.number === verse);
   }, [data.verses, verse]);
 
   const reference =
-    verse != null ? `${book.name} ${chapter}:${verse}` : `${book.name} ${chapter}`;
+    verse != null ? `${name} ${chapter}:${verse}` : `${name} ${chapter}`;
 
   return (
     <div className="space-y-4 animate-fade-in">
       <StepHeader
         title={reference}
-        subtitle={getBibleVersion(version).name}
+        subtitle={versionMeta(version).name}
         onBack={onBack}
       />
       <VersionSwitcher value={version} onChange={onVersionChange} />
       <Breadcrumb
         items={[
-          { label: TESTAMENT_LABELS[testament], step: "testament" },
-          { label: book.name, step: "book" },
-          { label: `Cap. ${chapter}`, step: "chapter" },
+          { label: testamentLabel(testament), step: "testament" },
+          { label: name, step: "book" },
+          { label: `${t("bible.chapterShort")} ${chapter}`, step: "chapter" },
           {
-            label: verse != null ? `v. ${verse}` : "Completo",
+            label:
+              verse != null
+                ? `${t("bible.verseShort")} ${verse}`
+                : t("bible.full"),
             step: "verse",
           },
         ]}
@@ -448,7 +483,7 @@ function ReadStep({
             onClick={() => onChangeVerse(null)}
             className="shrink-0 rounded-full bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white"
           >
-            Todos
+            {t("bible.all")}
           </button>
           {data.verses.map((v) => (
             <button
@@ -464,7 +499,14 @@ function ReadStep({
       )}
 
       <article className="rounded-2xl border border-border bg-gradient-to-b from-amber-50/40 via-card to-card p-5 shadow-sm dark:from-amber-950/20">
-        <div className="space-y-4">
+        <p className="mb-3 text-xs text-muted-foreground">
+          {t("bible.selectToTranslate")}
+        </p>
+        <SelectableTranslation
+          sourceLang={versionDef.language}
+          targetLang={targetLang}
+          className="space-y-4"
+        >
           {displayed.map((v) => (
             <p key={v.number} className="text-[16px] leading-[1.75]">
               {v.study && (
@@ -476,14 +518,14 @@ function ReadStep({
                 type="button"
                 onClick={() => onChangeVerse(v.number)}
                 className="mr-1.5 inline align-super text-xs font-bold text-amber-600 hover:underline dark:text-amber-400"
-                aria-label={`Versículo ${v.number}`}
+                aria-label={t("bible.verseLabel", { number: v.number })}
               >
                 {v.number}
               </button>
               {v.text}
             </p>
           ))}
-        </div>
+        </SelectableTranslation>
       </article>
 
       {verse != null && (
@@ -492,7 +534,7 @@ function ReadStep({
           onClick={() => onChangeVerse(null)}
           className="w-full rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          Ver capítulo completo
+          {t("bible.viewFullChapter")}
         </button>
       )}
     </div>
@@ -500,8 +542,9 @@ function ReadStep({
 }
 
 export function BibleReader() {
+  const { t, versionMeta } = useBibleLabels();
+  const { version, setVersion } = useBibleVersion();
   const [step, setStep] = useState<Step>("testament");
-  const [version, setVersion] = useState<BibleVersionCode>(DEFAULT_BIBLE_VERSION);
   const [testament, setTestament] = useState<TestamentId | null>(null);
   const [bookId, setBookId] = useState<string | null>(null);
   const [chapter, setChapter] = useState<number | null>(null);
@@ -512,7 +555,7 @@ export function BibleReader() {
   const [loadKey, setLoadKey] = useState(0);
 
   const book = bookId ? getBookById(bookId) : undefined;
-  const versionMeta = getBibleVersion(version);
+  const versionShortName = versionMeta(version).shortName;
 
   useEffect(() => {
     if (step !== "verse" && step !== "read") return;
@@ -534,7 +577,9 @@ export function BibleReader() {
       } catch (err) {
         if (!cancelled) {
           setData(null);
-          setError(err instanceof Error ? err.message : "Error al cargar.");
+          setError(
+            err instanceof Error ? err.message : t("bible.loadErrorGeneric")
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -600,7 +645,7 @@ export function BibleReader() {
     return (
       <BookListStep
         testament={testament}
-        versionLabel={versionMeta.shortName}
+        versionLabel={versionShortName}
         onBack={() => goToStep("testament")}
         onNavigate={goToStep}
         onSelect={(selected) => {
@@ -653,7 +698,7 @@ export function BibleReader() {
 
   if (step === "read" && testament && book && chapter != null) {
     if (loading || !data) {
-      return <Loading label="Cargando pasaje..." className="py-16" />;
+      return <Loading label={t("bible.loadingPassage")} className="py-16" />;
     }
 
     return (
@@ -675,8 +720,8 @@ export function BibleReader() {
   return (
     <EmptyState
       icon={BookOpen}
-      title="Biblia"
-      description="Elige un pasaje para comenzar."
+      title={t("bible.title")}
+      description={t("bible.pickPassage")}
     />
   );
 }

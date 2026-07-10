@@ -7,9 +7,13 @@ import { LogIn, LogOut, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Loading } from "@/components/ui/Loading";
 import { profileConfig } from "@/features/profile/config";
+import { useTranslation } from "@/components/providers/LocaleProvider";
+import { useModuleLabels } from "@/hooks/useModuleLabels";
 
 export function ProfileView() {
   const { user, loading, isConfigured, signInWithGoogle, signOut } = useAuth();
+  const { t } = useTranslation();
+  const { name: profileName } = useModuleLabels(profileConfig);
   const searchParams = useSearchParams();
   const [signingIn, setSigningIn] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -17,9 +21,9 @@ export function ProfileView() {
 
   useEffect(() => {
     if (searchParams.get("error") === "auth") {
-      setError("No se pudo completar el inicio de sesión. Inténtalo de nuevo.");
+      setError(t("profile.authError"));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const Icon = profileConfig.icon;
 
@@ -30,7 +34,7 @@ export function ProfileView() {
       await signInWithGoogle();
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "No se pudo iniciar sesión con Google."
+        e instanceof Error ? e.message : t("profile.signInError")
       );
       setSigningIn(false);
     }
@@ -42,14 +46,14 @@ export function ProfileView() {
     try {
       await signOut();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo cerrar sesión.");
+      setError(e instanceof Error ? e.message : t("profile.signOutError"));
     } finally {
       setSigningOut(false);
     }
   };
 
   if (loading) {
-    return <Loading label="Cargando perfil..." className="py-16" />;
+    return <Loading label={t("profile.loading")} className="py-16" />;
   }
 
   return (
@@ -68,12 +72,10 @@ export function ProfileView() {
           )}
         </div>
         <h1 className="text-2xl font-bold tracking-tight">
-          {user ? displayName(user) : profileConfig.name}
+          {user ? displayName(user, t("profile.defaultUser")) : profileName}
         </h1>
         <p className="mt-2 max-w-md text-muted-foreground">
-          {user
-            ? user.email
-            : "Inicia sesión con Google para editar tus canciones desde cualquier navegador."}
+          {user ? user.email : t("profile.guestHint")}
         </p>
       </div>
 
@@ -85,16 +87,14 @@ export function ProfileView() {
 
       {!isConfigured ? (
         <div className="rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
-          Supabase no está configurado. Las canciones se guardan solo en este
-          dispositivo.
+          {t("profile.supabaseNotConfigured")}
         </div>
       ) : user ? (
         <div className="space-y-3">
           <div className="rounded-xl border border-border bg-card p-4 text-sm">
-            <p className="font-medium">Sesión activa</p>
+            <p className="font-medium">{t("profile.activeSession")}</p>
             <p className="mt-1 text-muted-foreground">
-              Puedes crear y editar tus canciones desde cualquier navegador
-              donde inicies sesión con esta cuenta.
+              {t("profile.activeSessionHint")}
             </p>
           </div>
           <button
@@ -104,7 +104,7 @@ export function ProfileView() {
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50"
           >
             <LogOut size={18} />
-            {signingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+            {signingOut ? t("profile.signingOut") : t("profile.signOut")}
           </button>
         </div>
       ) : (
@@ -116,11 +116,10 @@ export function ProfileView() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             <LogIn size={18} />
-            {signingIn ? "Redirigiendo..." : "Continuar con Google"}
+            {signingIn ? t("profile.redirecting") : t("profile.continueGoogle")}
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            Al iniciar sesión, las canciones creadas en este dispositivo se
-            vincularán a tu cuenta.
+            {t("profile.signInHint")}
           </p>
         </div>
       )}
@@ -129,17 +128,15 @@ export function ProfileView() {
         <div className="flex items-start gap-3">
           <UserIcon size={20} className="mt-0.5 shrink-0 text-muted-foreground" />
           <div className="text-sm">
-            <p className="font-medium">Himnario</p>
+            <p className="font-medium">{t("profile.hymnario")}</p>
             <p className="mt-1 text-muted-foreground">
-              {user
-                ? "Tus canciones están sincronizadas con tu cuenta."
-                : "Sin sesión solo puedes ver canciones; para crear o editar las tuyas necesitas iniciar sesión."}
+              {user ? t("profile.synced") : t("profile.guestHymns")}
             </p>
             <Link
               href="/hymns"
               className="mt-2 inline-block text-primary hover:underline"
             >
-              Ir al himnario
+              {t("profile.goToHymns")}
             </Link>
           </div>
         </div>
@@ -148,14 +145,17 @@ export function ProfileView() {
   );
 }
 
-function displayName(user: {
-  user_metadata?: { full_name?: string; name?: string };
-  email?: string;
-}): string {
+function displayName(
+  user: {
+    user_metadata?: { full_name?: string; name?: string };
+    email?: string;
+  },
+  fallback: string
+): string {
   return (
     user.user_metadata?.full_name ??
     user.user_metadata?.name ??
     user.email ??
-    "Usuario"
+    fallback
   );
 }

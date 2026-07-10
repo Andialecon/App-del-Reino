@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
-import { settingsConfig } from "@/features/settings/config";
-import { ModulePage, createModuleMetadata } from "@/components/layout/ModulePage";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { SettingsView } from "@/features/settings/components/SettingsView";
 
-export const metadata: Metadata = createModuleMetadata(settingsConfig);
+export const metadata: Metadata = {
+  title: "Configuración",
+};
 
 export default function Page() {
-  return <ModulePage module={settingsConfig} />;
+  return (
+    <PageContainer>
+      <SettingsView />
+    </PageContainer>
+  );
 }

@@ -8,5 +8,5 @@ export const settingsConfig: ModuleConfig = {
   href: "/settings",
   icon: Settings,
   showInHome: false,
-  showInDrawer: false,
+  showInDrawer: true,
 };

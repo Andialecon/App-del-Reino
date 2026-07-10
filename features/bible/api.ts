@@ -1,5 +1,5 @@
 import type { BibleChapter, BibleVerse, BibleVersionCode } from "./types";
-import { DEFAULT_BIBLE_VERSION } from "./types";
+import { getDefaultBibleVersion } from "./types";
 import { getBookById } from "./data/books";
 
 interface ApiVerse {
@@ -29,7 +29,7 @@ function mapVerses(raw: ApiVerse[] | undefined): BibleVerse[] {
 export async function fetchChapter(
   bookId: string,
   chapter: number,
-  version: BibleVersionCode = DEFAULT_BIBLE_VERSION
+  version: BibleVersionCode = getDefaultBibleVersion("es")
 ): Promise<BibleChapter> {
   const book = getBookById(bookId);
   if (!book) {
