@@ -4,7 +4,7 @@ import type { ModuleConfig } from "../types";
 export const bibleConfig: ModuleConfig = {
   id: "bible",
   name: "Biblia",
-  description: "Lee y estudia la Palabra de Dios.",
+  description: "Lee la Biblia en RV60 o NVI.",
   href: "/bible",
   icon: BookOpen,
   showInHome: true,
