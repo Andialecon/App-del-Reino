@@ -134,10 +134,6 @@ export const en: Messages = {
     pickPassage: "Choose a passage to begin.",
     passageNav: "Passage navigation",
     verseLabel: "Verse {number}",
-    selectToTranslate: "Select a word or phrase to see its translation",
-    translating: "Translating...",
-    translateError: "Could not translate",
-    translateTo: "→ {language}",
     fullscreen: {
       enter: "Fullscreen",
       exit: "Exit fullscreen",

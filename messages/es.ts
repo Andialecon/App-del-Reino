@@ -132,10 +132,6 @@ export const es = {
     pickPassage: "Elige un pasaje para comenzar.",
     passageNav: "Navegación del pasaje",
     verseLabel: "Versículo {number}",
-    selectToTranslate: "Selecciona una palabra o frase para ver su traducción",
-    translating: "Traduciendo...",
-    translateError: "No se pudo traducir",
-    translateTo: "→ {language}",
     fullscreen: {
       enter: "Pantalla completa",
       exit: "Salir de pantalla completa",

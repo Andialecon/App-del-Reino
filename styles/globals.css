@@ -92,19 +92,3 @@ body {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
-
-.bible-selectable-text {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
-}
-
-.bible-selectable-text ::selection {
-  background-color: rgb(251 191 36 / 0.45);
-  color: inherit;
-}
-
-::highlight(bible-selection) {
-  background-color: rgb(251 191 36 / 0.45);
-  color: inherit;
-}

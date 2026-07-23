@@ -3,18 +3,13 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Minimize2 } from "lucide-react";
-import { SelectableTranslation } from "@/features/bible/components/SelectableTranslation";
 import type { BibleDisplaySettings, BibleVerse } from "@/features/bible/types";
 import { IconButton } from "@/components/ui/IconButton";
 import { useBibleLabels } from "@/hooks/useBibleLabels";
 import { cn } from "@/utils/cn";
-import type { Locale } from "@/lib/i18n";
-
 interface BiblePassageViewProps {
   verses: BibleVerse[];
   display: BibleDisplaySettings;
-  sourceLang: Locale;
-  targetLang: Locale;
   isFullscreen: boolean;
   onExitFullscreen: () => void;
   onChangeVerse: (verse: number) => void;
@@ -36,8 +31,6 @@ function getTextStyle(display: BibleDisplaySettings): CSSProperties {
 export function BiblePassageView({
   verses,
   display,
-  sourceLang,
-  targetLang,
   isFullscreen,
   onExitFullscreen,
   onChangeVerse,
@@ -62,11 +55,7 @@ export function BiblePassageView({
   }, [isFullscreen]);
 
   const passageContent = (
-    <SelectableTranslation
-      sourceLang={sourceLang}
-      targetLang={targetLang}
-      className="space-y-4"
-    >
+    <div className="space-y-4">
       {verses.map((v) => (
         <p key={v.number} style={textStyle}>
           {v.study && (
@@ -85,7 +74,7 @@ export function BiblePassageView({
           {v.text}
         </p>
       ))}
-    </SelectableTranslation>
+    </div>
   );
 
   const articleClassName = cn(

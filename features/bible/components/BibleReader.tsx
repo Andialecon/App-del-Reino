@@ -14,7 +14,6 @@ import { BiblePassageView } from "@/features/bible/components/BiblePassageView";
 import { VersionSwitcher } from "@/features/bible/components/VersionSwitcher";
 import { getBookById, getBooksByTestament } from "@/features/bible/data/books";
 import {
-  getBibleVersionDef,
   type BibleBook,
   type BibleChapter,
   type BibleVersionCode,
@@ -405,9 +404,6 @@ function ReadStep({
   const { settings, updateSettings, resetSettings } = useBibleDisplaySettings();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const name = bookName(book);
-  const versionDef = getBibleVersionDef(version);
-  const targetLang = versionDef.language === "es" ? "en" : "es";
-
   const displayed = useMemo(() => {
     if (verse == null) return data.verses;
     return data.verses.filter((v) => v.number === verse);
@@ -481,8 +477,6 @@ function ReadStep({
       <BiblePassageView
         verses={displayed}
         display={settings}
-        sourceLang={versionDef.language}
-        targetLang={targetLang}
         isFullscreen={isFullscreen}
         onExitFullscreen={() => setIsFullscreen(false)}
         onChangeVerse={onChangeVerse}
